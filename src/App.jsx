@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './css/Theme';
+// import { PinProvider } from './helper/PinComponents'; // Import the provider
 
 import Landing from "./pages/Landing";
 import Signup from "./pages/Signup";
@@ -12,9 +13,12 @@ import Dashboard from "./pages/Dashboard";
 import Wrapper from "./components/Wrapper";
 import Profile from "./pages/Profile";
 import ReportForm from "./components/ReportForm";
-import Test from "./pages/Test";
+// import Test from "./pages/Test";
 import History from "./pages/History";
-// import Map from "./components/Map";
+import LocalStorage from './components/LocalStorage'
+import Status from "./components/Status";
+// import Sample from "./components/Sample";
+import Pin from "./components/Pin";
 
 function App() {
   return (
@@ -31,7 +35,13 @@ function App() {
           <Route path="/login" element={<Login />} />
 
           {/* Test page */}
-          <Route path="/test" element={<Test />} />
+          {/* <Route path="/test" element={<Test />} /> */}
+
+          {/* Status */}
+          {/* <Route path="/sample" element={<Sample />} /> */}
+
+          {/* Pin */}
+          <Route path="/pin" element={<Pin />} />
 
           {/* Dashboard with nested routes */}
           <Route path="/dashboard" element={
@@ -67,8 +77,20 @@ function App() {
           }
           ></Route>
 
+          {/* Local storage testing */}
+          <Route path="/local" element={
+            <Wrapper>
+              <LocalStorage />
+            </Wrapper>
+          }
+          ></Route>
 
-
+          {/* Status */}
+          <Route path="/status" element={
+            <Wrapper>
+              <Status />
+            </Wrapper>
+          } ></Route>
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Typography from '@mui/material/Typography';
@@ -24,7 +24,7 @@ import RepairIcon from '../assets/images/Repair_shadow.png';
 import RepairHoverIcon from '../assets/images/Repair_symbol.png';
 import RequestIcon from '../assets/images/Request_shadow.png';
 import RequestHoverIcon from '../assets/images/Request_symbol.png';
-import { areas } from '../helper/areas';  // Adjust path if necessary
+import supabase from "../helper/supabaseClient";
 
 
 
@@ -39,7 +39,8 @@ const PinSidebar = ({ isOpen, setIsOpen }) => {
     const [clonedPins, setClonedPins] = useState([]);
     const [selectedPin, setSelectedPin] = useState(null);
     const [showReportForm, setShowReportForm] = useState(false);
-
+    const [userID, setUserID] = useState(null);
+    const [savedPins, setSavedPins] = useState([]);
     const isDragging = useRef(false);
     const draggingPinId = useRef(null);
     const startPosition = useRef({ x: 0, y: 0 });
@@ -58,64 +59,69 @@ const PinSidebar = ({ isOpen, setIsOpen }) => {
         { id: 'Request', icon: RequestHoverIcon, hoverIcon: RequestIcon, label: 'Request Pin', type: 'Request' },
     ];
 
-    // Function to delete pin from clonedPins state
+
+
+
     // Function to delete pin from clonedPins state
     const deletePin = (pinId) => {
         setClonedPins((prevPins) => prevPins.filter((pin) => pin.id !== pinId));
     };
 
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            const { data: { user }, error } = await supabase.auth.getUser();
 
-    // const handlePinClick = (id, isFromSidebar, e) => {
-    //     const clickedPin = pinData.find((pin) => pin.id === id);
-    //     if (!clickedPin) return;
+            if (error) {
+                console.error('Error fetching user:', error);
+                return;
+            }
 
-    //     // Determine the event type (Mouse or Touch)
-    //     let mouseX, mouseY;
-    //     if (e.clientX && e.clientY) { // Mouse event
-    //         mouseX = e.clientX;
-    //         mouseY = e.clientY;
-    //     } else if (e.touches && e.touches[0]) { // Touch event
-    //         mouseX = e.touches[0].clientX;
-    //         mouseY = e.touches[0].clientY;
-    //     }
+            if (user) {
+                const { data: userDetails, error: userError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('id', user.id)
+                    .single();
 
-    //     if (isFromSidebar) {
-    //         const userConfirmed = window.confirm(`${clickedPin.label} selected`);
-    //         if (userConfirmed) {
-    //             const newPin = {
-    //                 id: `${Date.now()}-${Math.random()}`, // Ensure unique ID by appending a random value
-    //                 ...clickedPin,
-    //                 x: mouseX || 0,
-    //                 y: mouseY || 0,
-    //             };
+                if (userError) {
+                    console.error('Error fetching user details:', userError);
+                } else {
+                    setUserID(userDetails?.id || 'UserID');
+                }
+            }
+        };
+        fetchUserInfo();
+    }, []);
 
-    //             setClonedPins((prevPins) => [...prevPins, newPin]);
-    //             setIsOpen(false); // Close sidebar
-    //             currentPinRef.current = newPin;
-    //         }
-    //     } else {
-    //         const userConfirmed = window.confirm('Do you want to confirm the pin position?');
-    //         if (userConfirmed) {
-    //             setSelectedPin({
-    //                 id: Date.now().toString(),
-    //                 type: clickedPin.type,
-    //             });
-    //             setShowReportForm(true);
-    //         }
-    //     }
-    // };
+    // Save pins to local storage whenever clonedPins updates
+    useEffect(() => {
+        localStorage.setItem('pins', JSON.stringify(clonedPins));
+    }, [clonedPins]);
 
+    // Load pins from local storage on component mount
+    useEffect(() => {
+        const savedPins = JSON.parse(localStorage.getItem('pins')) || [];
+        setClonedPins(savedPins);
+    }, []);
 
     const handlePinClick = (id, isFromSidebar, e) => {
-        const clickedPin = pinData.find((pin) => pin.id === id);
-        if (!clickedPin) return;
+        console.log("Pin clicked. ID:", id, "From Sidebar:", isFromSidebar);
 
-        // Determine the event type (Mouse or Touch)
+        // Find the clicked pin from pinData or clonedPins
+        const clickedPin = pinData.find((pin) => pin.id === id) || clonedPins.find((pin) => pin.id === id);
+
+        if (!clickedPin) {
+            console.error("Clicked pin not found.");
+            return;
+        }
+
         let mouseX, mouseY;
-        if (e.clientX && e.clientY) { // Mouse event
+
+        // Determine mouse position (clientX, clientY for desktop or touches for mobile)
+        if (e.clientX && e.clientY) {
             mouseX = e.clientX;
             mouseY = e.clientY;
-        } else if (e.touches && e.touches[0]) { // Touch event
+        } else if (e.touches && e.touches[0]) {
             mouseX = e.touches[0].clientX;
             mouseY = e.touches[0].clientY;
         }
@@ -123,55 +129,86 @@ const PinSidebar = ({ isOpen, setIsOpen }) => {
         if (isFromSidebar) {
             const userConfirmed = window.confirm(`${clickedPin.label} selected`);
             if (userConfirmed) {
+                const newPinId = `pin-${Date.now()}`; // Generate unique ID
+                console.log("Generated Pin ID (from Sidebar):", newPinId);
+
                 const newPin = {
-                    id: `${Date.now()}-${Math.random()}`, // Ensure unique ID
                     ...clickedPin,
-                    x: mouseX || 0,
-                    y: mouseY || 0,
+                    id: newPinId,
+                    x: mouseX || 0, // Use mouseX for new pin
+                    y: mouseY || 0, // Use mouseY for new pin
+                    floor: 1,
+                    user_uid: userID || 'UserID',
+                    active: true,
                 };
 
-                const pinDetails = {
-                    top: `${newPin.y}px`,
-                    left: `${newPin.x}px`,
-                    imgSrc: newPin.hoverIcon,
-                    floor: 1, // Assuming floor 1
-                };
+                console.log("New Pin details:", newPin);
 
-                // Save pin to localStorage
-                const savedPins = JSON.parse(localStorage.getItem('pins')) || {};
-                savedPins[newPin.id] = pinDetails;
-                localStorage.setItem('pins', JSON.stringify(savedPins));
-
-                // Update the state
+                // Add the new pin to the state
                 setClonedPins((prevPins) => [...prevPins, newPin]);
-                setIsOpen(false); // Close sidebar
+                setIsOpen(false);
             }
         } else {
+            console.log("Clicked on a pin from cloned pins...");
             const activePin = clonedPins.find((pin) => pin.id === id);
-            if (activePin) {
-                const pinDetails = {
-                    top: `${activePin.y}px`,
-                    left: `${activePin.x}px`,
-                    imgSrc: activePin.hoverIcon,
-                    floor: 1, // Assuming floor 1
-                };
-                console.log("Active Pin Details:", pinDetails);
 
+            if (activePin) {
                 const userConfirmed = window.confirm('Do you want to confirm the pin position?');
                 if (userConfirmed) {
-                    // setSelectedPin(pinDetails);
+                    console.log("User confirmed the pin position.");
+
+                    // Update the state to mark the pin as active
+                    setClonedPins((prevPins) =>
+                        prevPins.map((pin) =>
+                            pin.id === activePin.id ? { ...pin, active: true } : pin
+                        )
+                    );
+
+                    // Set the selected pin details with exact x and y coordinates
                     setSelectedPin({
-                        id: Date.now().toString(),
+                        id: activePin.id,
                         type: clickedPin.type,
-                        coordinates: JSON.stringify(pinDetails),
+                        coordinates: JSON.stringify({
+                            x: activePin.x,
+                            y: activePin.y,
+
+                        }),
                     });
+
+                    console.log("Confirmed Pin Coordinates:", {
+                        x: activePin.x,
+                        y: activePin.y,
+                    });
+
                     setShowReportForm(true);
-                    currentPinRef.current = newPin;
+                    currentPinRef.current = activePin;
                 }
+            } else {
+                console.log("No active pin found to confirm.");
             }
         }
     };
 
+
+    const cancelPin = () => {
+        const activePin = currentPinRef.current;
+
+        if (activePin) {
+            // Remove the pin from localStorage
+            const savedPins = JSON.parse(localStorage.getItem('pins')) || {};
+            delete savedPins[activePin.id];
+            localStorage.setItem('pins', JSON.stringify(savedPins));
+
+            // Remove the pin from the clonedPins state
+            setClonedPins((prevPins) =>
+                prevPins.filter((pin) => pin.id !== activePin.id)
+            );
+
+            // Optionally, reset the active state or perform other cleanup
+            setSelectedPin(null);
+            currentPinRef.current = null; // Clear the reference
+        }
+    };
 
 
     // Mouse move handler for the new pin (follows the cursor)
@@ -343,7 +380,7 @@ const PinSidebar = ({ isOpen, setIsOpen }) => {
             {showReportForm && (
                 <Report pin={selectedPin}
                     deletePin={deletePin}
-                    setShowReportForm={setShowReportForm}  // Pass the state setter to close the form
+                    setShowReportForm={setShowReportForm}
                 />
             )}
         </Box >
@@ -353,3 +390,120 @@ const PinSidebar = ({ isOpen, setIsOpen }) => {
 export default PinSidebar;
 
 
+// import React, { useState, useRef, useEffect } from 'react';
+// import Box from '@mui/material/Box';
+// import Drawer from '@mui/material/Drawer';
+// import Typography from '@mui/material/Typography';
+// import IconButton from '@mui/material/IconButton';
+// import CloseIcon from '@mui/icons-material/Close';
+// import Button from '@mui/material/Button';
+// import List from '@mui/material/List';
+// import ListItem from '@mui/material/ListItem';
+// import ListItemText from '@mui/material/ListItemText';
+// import Divider from '@mui/material/Divider';
+// import '@fontsource/poppins';
+
+// const PinSidebar = ({ isOpen, setIsOpen }) => {
+//     const [clonedPins, setClonedPins] = useState([]);
+//     const [hoveredPin, setHoveredPin] = useState(null);
+
+//     // Save pins to local storage whenever clonedPins updates
+//     useEffect(() => {
+//         localStorage.setItem('pins', JSON.stringify(clonedPins));
+//     }, [clonedPins]);
+
+//     // Load pins from local storage on component mount
+//     useEffect(() => {
+//         const savedPins = JSON.parse(localStorage.getItem('pins')) || [];
+//         setClonedPins(savedPins);
+//     }, []);
+
+//     // Add a new pin
+//     const addPin = (type) => {
+//         const newPin = {
+//             id: `pin-${Date.now()}`,
+//             type,
+//             x: Math.random() * 500, // Random coordinates for demo
+//             y: Math.random() * 500,
+//         };
+//         setClonedPins((prevPins) => [...prevPins, newPin]);
+//     };
+
+//     // Clear all pins from local storage and state
+//     const clearPins = () => {
+//         localStorage.removeItem('pins');
+//         setClonedPins([]);
+//     };
+
+//     return (
+//         <Box>
+//             <Drawer
+//                 anchor="right"
+//                 open={isOpen}
+//                 onClose={() => setIsOpen(false)}
+//                 sx={{
+//                     '& .MuiDrawer-paper': {
+//                         width: 300,
+//                         backgroundColor: '#A8DADC',
+//                         color: '#1D3557',
+//                     },
+//                 }}
+//             >
+//                 <Box
+//                     sx={{
+//                         display: 'flex',
+//                         alignItems: 'center',
+//                         justifyContent: 'space-between',
+//                         padding: '10px 20px',
+//                         backgroundColor: '#457B9D',
+//                         color: '#ffffff',
+//                     }}
+//                 >
+//                     <Typography variant="h6">Saved Pins</Typography>
+//                     <IconButton onClick={() => setIsOpen(false)} sx={{ color: '#ffffff' }}>
+//                         <CloseIcon />
+//                     </IconButton>
+//                 </Box>
+//                 <Divider />
+
+//                 <Box sx={{ padding: '20px' }}>
+//                     {/* Display Cloned Pins */}
+//                     <Typography variant="h6" sx={{ marginBottom: '10px' }}>
+//                         Cloned Pins
+//                     </Typography>
+//                     <List>
+//                         {clonedPins.map((pin) => (
+//                             <ListItem key={pin.id} sx={{ padding: '10px' }}>
+//                                 <ListItemText
+//                                     primary={`Type: ${pin.type}`}
+//                                     secondary={`Coordinates: (${pin.x.toFixed(1)}, ${pin.y.toFixed(1)})`}
+//                                 />
+//                             </ListItem>
+//                         ))}
+//                     </List>
+//                     {clonedPins.length === 0 && <Typography>No pins saved.</Typography>}
+
+//                     {/* Add Pin Button */}
+//                     <Button
+//                         variant="contained"
+//                         sx={{ marginTop: '10px', backgroundColor: '#1D3557' }}
+//                         onClick={() => addPin('Demo Pin')}
+//                     >
+//                         Add Pin
+//                     </Button>
+
+//                     {/* Clear Pins Button */}
+//                     <Button
+//                         variant="outlined"
+//                         sx={{ marginTop: '10px', marginLeft: '10px' }}
+//                         onClick={clearPins}
+//                     >
+//                         Clear Pins
+//                     </Button>
+//                 </Box>
+//             </Drawer>
+//         </Box>
+//     );
+// };
+
+// export default PinSidebar;

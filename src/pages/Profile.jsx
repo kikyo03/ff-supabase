@@ -168,11 +168,31 @@ const User = () => {
     };
 
     if (loading) {
-        return <div>
-            <Box sx={{ display: 'flex' }}>
-                <CircularProgress size="4rem" />
-            </Box>
-        </div>;
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column', // Arrange items in a column
+                    alignItems: 'center', // Center items horizontally
+                    justifyContent: 'center', // Center items vertically
+                    height: '100vh', // Full height for centering
+                }}
+            >
+                <Box sx={{ display: 'flex' }}>
+                    <CircularProgress size="4rem" />
+                </Box>
+                <div
+                    style={{
+                        marginTop: '1rem', // Add spacing between the spinner and text
+                        fontSize: '18px', // Adjust font size
+                        fontWeight: 'bold', // Make text bold
+                        color: 'rgba(0, 0, 0, 0.7)', // Add subtle text color
+                    }}
+                >
+                    Loading profile...
+                </div>
+            </div>
+        );
     }
 
 

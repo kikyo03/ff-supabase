@@ -10,50 +10,6 @@ import supabase from "../helper/supabaseClient";
 import { v4 as uuidv4 } from "uuid";  // Add uuid to generate unique file names
 
 
-// const Report = ({ pin }) => {
-//     const [userData, setUserData] = useState(null);
-//     const [report, setReport] = useState({
-//         title: "",
-//         details: "",
-//         type: "",
-//         status: "Pending",
-//         name: "",
-//         coordinates: "",
-//         floor: "",
-//         pinId: "",
-//         image: null,
-//     });
-
-// const Report = ({ pin, deletePin }) => {
-//     const [userData, setUserData] = useState(null);
-//     const [report, setReport] = useState({
-//         title: "",
-//         details: "",
-//         type: pin?.type || "", // Initialize with pin's type
-//         status: "Pending",
-//         name: "",
-//         coordinates: "",
-//         floor: "",
-//         pinId: pin?.id || "", // Initialize with pin's id
-//         image: null,
-//     });
-
-//     useEffect(() => {
-//         if (pin) {
-//             setReport((prev) => ({
-//                 ...prev,
-//                 pinId: pin.id,
-//                 type: pin.type,
-//             }));
-//         }
-//     }, [pin]);
-
-//     const handleCancel = () => {
-//         // When Cancel is clicked, delete the pin
-//         setOpen(false);
-//         deletePin(pin.id);
-//     };
-
 const Report = ({ pin, deletePin, setShowReportForm }) => {
     const [userData, setUserData] = useState(null);
     const [report, setReport] = useState({
@@ -130,48 +86,7 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
     }, []);
 
 
-    // Fetch the authenticated user and set the userId
-    // useEffect(() => {
-    //     const getUser = async () => {
-    //         const { data: { user }, error } = await supabase.auth.getUser();
-    //         if (error) {
-    //             console.error("Error fetching user:", error);
-    //             return;
-    //         }
-    //         if (user) {
-    //             setUserId(user.id); // This will directly use the Supabase user ID
-    //         } else {
-    //             console.error("No authenticated user found. Please log in.");
-    //         }
-    //     };
-    //     getUser();
-    // }, []);
 
-    // useEffect(() => {
-    //     const fetchUserData = async () => {
-    //         try {
-    //             const { data: { user }, error } = await supabase.auth.getUser();
-    //             if (error) throw error;
-
-    //             const { data, error: fetchError } = await supabase
-    //                 .from("users")
-    //                 .select('fname, lname, id')
-    //                 .eq("id", user.id)
-    //                 .single();
-
-    //             if (fetchError) throw fetchError;
-
-    //             setUserData({
-    //                 fname: data.fname,
-    //                 lname: data.lname,
-    //                 customUid: data.id, // This is the Supabase `user.id`
-    //             });
-    //         } catch (error) {
-    //             console.error("Error fetching user data:", error.message);
-    //         }
-    //     };
-    //     fetchUserData();
-    // }, []);
 
     const handleChange = (e) => {
         setReport((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -210,6 +125,42 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
     };
 
 
+    // const handleClick = async (e) => {
+    //     e.preventDefault();
+
+    //     // Check if required fields are filled
+    //     if (!report.title || !report.details || !report.type) {
+    //         setError(true);
+    //         return;
+    //     }
+
+    //     try {
+    //         // Insert report into Supabase
+    //         const { error: insertError } = await supabase.from("reports").insert({
+    //             title: report.title,
+    //             details: report.details,
+    //             type: report.type,
+    //             status: report.status,
+    //             user_uid: userId, // Use the userId from Supabase directly
+    //             name: `${userData?.fname || ""} ${userData?.lname || ""}`, // Ensure name is being passed
+    //             coordinates: report.coordinates,
+    //             floor: report.floor,
+    //             pinid: report.pinId,
+    //             image: report.image, // Save the uploaded image URL in the report
+    //         });
+
+    //         if (insertError) throw insertError;
+
+    //         setOpen(false);
+    //         setOpenSnackbar(true);
+    //         setError(false);
+    //         resetForm();
+    //     } catch (err) {
+    //         console.error("Error submitting report:", err.message);
+    //         setError(true);
+    //     }
+    // };
+
     const handleClick = async (e) => {
         e.preventDefault();
 
@@ -220,7 +171,7 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
         }
 
         try {
-            // Insert report into Supabase
+            // Insert report into Supabase reports table
             const { error: insertError } = await supabase.from("reports").insert({
                 title: report.title,
                 details: report.details,
@@ -236,6 +187,16 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
 
             if (insertError) throw insertError;
 
+            // Insert data into the pins table
+            const { error: pinsError } = await supabase.from("pins").upsert({
+                pinid: report.pinId, // Pin ID to update or insert
+                coordinates: report.coordinates,
+                user_uid: userId, // User UID from the current user
+                floor: report.floor, // Floor value
+            });
+
+            if (pinsError) throw pinsError;
+
             setOpen(false);
             setOpenSnackbar(true);
             setError(false);
@@ -245,6 +206,7 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
             setError(true);
         }
     };
+
 
 
     const resetForm = () => {
@@ -384,7 +346,7 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                                 value={report.coordinates}
                                 // value={"test"}
                                 onChange={handleChange}
-                                InputProps={{ readOnly: true }}
+                            // InputProps={{ readOnly: true }}
                             />
                             <TextField
                                 margin="dense"
