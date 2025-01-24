@@ -26,7 +26,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Landing page */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Signup />} />
 
           {/* Register */}
           <Route path="/signup" element={<Signup />} />
