@@ -92,7 +92,7 @@ export const areas1 = [
     { id: 'lectureRoom4', label: 'Lecture Room 4', x: 666.5, y: 0.5, width: 211, height: 123, color: '#86A789', image: Lecture4 },
     { id: 'lectureRoom5', label: 'Lecture Room 5', x: 454.5, y: 0.5, width: 211, height: 123, color: '#739072', image: Lecture5 },
     { id: 'lectureRoom6', label: 'Lecture Room 6', x: 250.5, y: 0.5, width: 203, height: 123, color: '#4F6F52', image: Lecture6 },
-    { id: 'server3Room', label: 'Server Room', x: 166.5, y: 0.5, width: 83, height: 123, color: '#3F6142', image: Server3 },
+    { id: 'server3Room', label: 'Server 3', x: 166.5, y: 0.5, width: 83, height: 123, color: '#3F6142', image: Server3 },
     { id: 'stairs2', label: 'Stairs 2', x: 83.5, y: 0.5, width: 82, height: 123, color: 'black', image: Stair2 },
     { id: 'comfortRooms2', label: 'CR 2', x: 0.5, y: 0.5, width: 82, height: 123, color: '#4A55A2', image: CR2 },
 ];
