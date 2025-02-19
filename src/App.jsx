@@ -13,7 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Wrapper from "./components/Wrapper";
 import Profile from "./pages/Profile";
 import ReportForm from "./components/ReportForm";
-// import Test from "./pages/Test";
+import Test from "./pages/Test";
 import History from "./pages/History";
 import LocalStorage from './components/LocalStorage'
 import Status from "./components/Status";
@@ -35,7 +35,7 @@ function App() {
           <Route path="/login" element={<Login />} />
 
           {/* Test page */}
-          {/* <Route path="/test" element={<Test />} /> */}
+          <Route path="/test" element={<Test />} />
 
           {/* Status */}
           {/* <Route path="/sample" element={<Sample />} /> */}
@@ -86,7 +86,7 @@ function App() {
           ></Route>
 
           {/* Status */}
-          <Route path="/status" element={
+          <Route path="/status/:pinId" element={
             <Wrapper>
               <Status />
             </Wrapper>

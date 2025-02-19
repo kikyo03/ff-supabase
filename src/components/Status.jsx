@@ -1,366 +1,405 @@
-// import React, { useState, useEffect } from "react";
-// import { styled } from "@mui/system";
-// import { Card, CardContent, CardMedia, Typography, Button, Box, Modal, IconButton } from "@mui/material";
-// import { FaMapMarkerAlt } from "react-icons/fa";
-// import CloseIcon from "@mui/icons-material/Close";
-
-// // Main card container style
-// const StyledCard = styled(Card)({
-//     maxWidth: 500, // Maximum width of the card
-//     margin: "10px auto", // Center the card with margin
-//     borderRadius: "10px", // Rounded corners
-//     backgroundColor: "#A8DADC", // Card background color
-//     boxShadow: "0 3px 5px rgba(0, 0, 0, 0.1)", // Subtle shadow for depth
-// });
-
-// // Header style for the card
-// const StyledHeader = styled(Box)({
-//     backgroundColor: "#1D3557", // Header background color
-//     padding: "8px 12px", // Padding inside the header
-//     borderRadius: "10px 10px 0 0", // Rounded corners at the top
-//     textAlign: "center", // Center-align text
-//     color: "#fae6cfff", // Font color of the header text
-//     fontFamily: "Poppins", // Font family for consistent design
-//     fontWeight: 600, // Font weight for emphasis
-//     fontSize: "1.4rem", // Font size of the title
-//     position: "relative", // For positioning the close button
-// });
-
-// // Close button style in the header
-// const CloseButton = styled(IconButton)({
-//     position: "absolute", // Position the button at the top-right corner
-//     top: "8px",
-//     right: "8px",
-//     color: "#fae6cfff", // White color for the button
-// });
-
-// // Card content styling
-// const StyledContent = styled(CardContent)({
-//     padding: "10px", // Padding for card content
-//     fontFamily: "Poppins", // Consistent font family
-// });
-
-// // Each detail section inside the card
-// const DetailItem = styled(Box)({
-//     marginBottom: "6px", // Spacing between detail items
-//     textAlign: "center", // Center-align each detail
-// });
-
-// // Label style for detail items
-// const DetailLabel = styled(Typography)({
-//     fontWeight: 600, // Bold font weight for emphasis
-//     fontSize: "1rem", // Font size of the label
-//     color: "#E63946", // Font color of the label
-// });
-
-// // Value style for detail items
-// const DetailValue = styled(Typography)({
-//     fontSize: "1em", // Font size for the value text
-//     color: "#1D3557", // Font color of the value text
-//     marginTop: "4px", // Space between label and value
-// });
-
-// // Button style at the bottom of the card
-// const ActionButton = styled(Button)({
-//     marginTop: "8px", // Space above the button
-//     backgroundColor: "#457B9D", // Background color of the button
-//     color: "#fff", // Font color for button text
-//     padding: "6px 16px", // Padding inside the button
-//     fontSize: "0.9rem", // Font size of the button text
-//     borderRadius: "16px", // Rounded button
-//     "&:hover": {
-//         backgroundColor: "#dc2f3c", // Hover background color
-//     },
-// });
-
-// // Modal container for the image
-// const ModalImage = styled(Box)({
-//     display: "flex", // Center-align the content
-//     alignItems: "center",
-//     justifyContent: "center",
-//     height: "90%", // Modal height
-//     backgroundColor: "rgba(0, 0, 0, 0.8)", // Dark background for the modal
-// });
-
-// const ReportStatus = () => {
-//     const [isCardOpen, setIsCardOpen] = useState(true); // State to control card visibility
-//     const [isImageModalOpen, setIsImageModalOpen] = useState(false); // State to control modal visibility
-
-//     const handleCloseCard = () => setIsCardOpen(false); // Close the card
-//     const handleOpenImageModal = () => setIsImageModalOpen(true); // Open the image modal
-//     const handleCloseImageModal = () => setIsImageModalOpen(false); // Close the image modal
-
-//     // Load custom font (Poppins)
-//     useEffect(() => {
-//         const link = document.createElement("link");
-//         link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap";
-//         link.rel = "stylesheet";
-//         document.head.appendChild(link);
-//         return () => document.head.removeChild(link);
-//     }, []);
-
-//     // Example report data
-//     const reportData = {
-//         title: "Electrical Hazard Report",
-//         details: "Spotted illegal dumping of waste materials near the river bank",
-//         type: "Electrical",
-//         status: "Pending",
-//         reporterName: "John Smith",
-//         image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-//     };
-
-//     return (
-//         <>
-//             {isCardOpen && (
-//                 <StyledCard>
-//                     {/* Header with title and close button */}
-//                     <StyledHeader>
-//                         Report Status
-//                         <CloseButton onClick={handleCloseCard}>
-//                             <CloseIcon />
-//                         </CloseButton>
-//                     </StyledHeader>
-
-//                     {/* Image section */}
-//                     <CardMedia
-//                         component="img"
-//                         height="190" // Image height
-//                         image={reportData.image}
-//                         alt="Report Image"
-//                         sx={{ cursor: "pointer" }}
-//                         onClick={handleOpenImageModal} // Open modal on click
-//                     />
-
-//                     {/* Details section */}
-//                     <StyledContent>
-//                         {["Title", "Details", "Report Type", "Status", "Reporter Name"].map((label, i) => (
-//                             <DetailItem key={i}>
-//                                 <DetailLabel>{label}:</DetailLabel>
-//                                 <DetailValue>{reportData[label.toLowerCase().replace(" ", "")]}</DetailValue>
-//                             </DetailItem>
-//                         ))}
-//                         <Box textAlign="center">
-//                             <ActionButton startIcon={<FaMapMarkerAlt />}>Go to map</ActionButton>
-//                         </Box>
-//                     </StyledContent>
-//                 </StyledCard>
-//             )}
-
-//             {/* Modal for full-size image */}
-//             <Modal open={isImageModalOpen} onClose={handleCloseImageModal}>
-//                 <ModalImage onClick={handleCloseImageModal}>
-//                     <Box
-//                         component="img"
-//                         src={reportData.image}
-//                         alt="Full Size Report Image"
-//                         sx={{ maxWidth: "80%", maxHeight: "60%", borderRadius: "10px" }}
-//                     />
-//                 </ModalImage>
-//             </Modal>
-//         </>
-//     );
-// };
-
-// export default ReportStatus;
-
-
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { styled } from "@mui/system";
-import { Card, CardContent, CardMedia, Typography, Button, Box, Modal, IconButton } from "@mui/material";
+import { Card, CardContent, CardMedia, Typography, Button, Box, Modal, IconButton, CircularProgress } from "@mui/material";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import supabase from "../helper/supabaseClient";
 
-// Main card container style
+
 const StyledCard = styled(Card)(() => ({
     maxWidth: 500,
-    margin: "10px auto",
-    borderRadius: "10px",
+    borderRadius: "16px",
     backgroundColor: "#A8DADC",
-    boxShadow: "0 3px 5px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
 }));
 
-// Header style for the card
+
 const StyledHeader = styled(Box)(() => ({
     backgroundColor: "#1D3557",
-    padding: "8px 12px",
-    borderRadius: "10px 10px 0 0",
-    textAlign: "center",
-    color: "#fae6cfff",
-    fontFamily: "Poppins",
-    fontWeight: 600,
-    fontSize: "1.4rem",
-    position: "relative",
-}));
-
-// Close button style in the header
-const CloseButton = styled(IconButton)(() => ({
-    position: "absolute",
-    top: "8px",
-    right: "8px",
-    color: "#fae6cfff",
-}));
-
-// Card content styling
-const StyledContent = styled(CardContent)(() => ({
     padding: "10px",
+    borderRadius: "16px 16px 0 0",
+    textAlign: "center",
+    color: "#fae6cfff",
+    fontFamily: "Poppins",
+    fontWeight: 500,
+    fontSize: "1.5rem",
+}));
+
+const StyledContent = styled(CardContent)(() => ({
+    padding: "20px",
     fontFamily: "Poppins",
 }));
 
-// Each detail section inside the card
 const DetailItem = styled(Box)(() => ({
-    marginBottom: "6px",
-    textAlign: "center",
+    marginBottom: "10px",
+    textAlign: "left",
+    padding: "10px",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: "8px",
 }));
 
-// Label style for detail items
 const DetailLabel = styled(Typography)(() => ({
-    fontWeight: 600,
-    fontSize: "1rem",
+    fontWeight: 700,
+    fontSize: "1.1rem",
     color: "#E63946",
 }));
 
-// Value style for detail items
 const DetailValue = styled(Typography)(() => ({
-    fontSize: "1em",
+    fontSize: "1rem",
     color: "#1D3557",
-    marginTop: "4px",
+    lineHeight: "1.5",
 }));
 
-// Button style at the bottom of the card
 const ActionButton = styled(Button)(() => ({
-    marginTop: "8px",
+    marginTop: "10px",
     backgroundColor: "#457B9D",
     color: "#fff",
-    padding: "6px 16px",
-    fontSize: "0.9rem",
-    borderRadius: "16px",
+    padding: "10px 20px",
+    fontSize: "1rem",
+    borderRadius: "24px",
     "&:hover": {
         backgroundColor: "#dc2f3c",
+        transform: "scale(1.05)",
     },
 }));
 
-// Modal container for the image
 const ModalImage = styled(Box)(() => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    height: "90%",
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    zIndex: 9999, // Ensure it's visible above other elements
+    height: "100vh",
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
 }));
 
-// The main component
+
 const ReportStatus = () => {
-    const [isCardOpen, setIsCardOpen] = useState(true); // State to control card visibility
-    const [isImageModalOpen, setIsImageModalOpen] = useState(false); // State to control modal visibility
-    const navigate = useNavigate(); // Corrected hook location
+    const { pinId } = useParams();
+    const [reportData, setReportData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [userRole, setUserRole] = useState('');
+    const [status, setStatus] = useState(null);
 
-    const handleNavigate = () => {
-        navigate("/dashboard"); // Navigate to dashboard
-    };
+    const navigate = useNavigate();
 
-    const handleCloseCard = () => setIsCardOpen(false); // Close the card
-    const handleOpenImageModal = () => {
-        console.log("Opening Modal");
-        setIsImageModalOpen(true); // Open the image modal
-    };
-    const handleCloseImageModal = () => setIsImageModalOpen(false); // Close the image modal
-
-    // Load custom font (Poppins)
     useEffect(() => {
-        const link = document.createElement("link");
-        link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap";
-        link.rel = "stylesheet";
-        document.head.appendChild(link);
-        return () => document.head.removeChild(link);
+        if (reportData) {
+            setStatus(reportData.status);
+        }
+    }, [reportData]);
+    
+    
+    const handleMarkAsDone = async () => {
+        try {
+            const { error } = await supabase
+                .from('reports')
+                .update({ status: 'Resolved' })
+                .eq('pinid', pinId);
+    
+            if (error) throw error;
+
+            await handleDeletePin();
+            
+            setReportData(prev => ({ ...prev, status: 'Resolved' }));
+            alert('Report marked as done!');
+
+             // Navigate back to the map after denying
+             navigate("/dashboard");
+    
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+
+
+    useEffect(() => {
+        const fetchReportData = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("reports")
+                    .select("*")
+                    .eq("pinid", pinId)
+                    .single();
+                
+                if (error) throw error;
+                if (!data) throw new Error("No report found for this pin");
+
+                setReportData(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        if (pinId) fetchReportData();
+    }, [pinId]);
+
+
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            const { data: { user }, error } = await supabase.auth.getUser();
+    
+            if (error) {
+                console.error('Error fetching user:', error);
+                return;
+            }
+    
+            if (user) {
+                const { data: userDetails, error: userError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+    
+                if (userError) {
+                    console.error('Error fetching user role:', userError);
+                } else {
+                    console.log('User Role:', userDetails?.role);
+                    setUserRole(userDetails?.role || ''); // Add this line to set the role in state
+                }
+            }
+        };
+        fetchUserRole();
     }, []);
 
-    // Example report data
-    const reportData = {
-        title: "Electrical Hazard Report",
-        details: "Spotted illegal dumping of waste materials near the river bank",
-        type: "Electrical",
-        status: "Pending",
-        reporterName: "John Smith",
-        image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+   
+
+    const handleAccept = async () => {
+        try {
+            console.log("Updating reports for pinId:", pinId);
+    
+            // Update the report status
+            const { error: reportError } = await supabase
+                .from('reports')
+                .update({ status: 'In Progress' })
+                .eq('pinid', pinId);
+            
+            if (reportError) throw reportError;
+    
+            console.log("Updating pins for pinId:", pinId);
+            // Update the pin status in the pins table
+            const { error: pinError } = await supabase
+                .from('pins')
+                .update({ status: 'In Progress' })
+                .eq('pinid', pinId); // Change to .eq('id', pinId) if needed
+            
+            if (pinError) throw pinError;
+    
+            setReportData(prev => ({ ...prev, status: 'In Progress' }));
+            alert('Report Accepted!');
+            
+            
+    
+        } catch (err) {
+            console.error("Error updating:", err.message);
+            setError(err.message);
+        }
     };
+    
+
+
+    const handleDeny = async () => {
+        try {
+            // Update the report status to 'Denied'
+            const { error: reportError } = await supabase
+                .from('reports')
+                .update({ status: 'Denied' })
+                .eq('pinid', pinId);
+    
+            if (reportError) throw reportError;
+    
+            // Delete the pin using handleDeletePin logic
+            await handleDeletePin();
+    
+            setReportData(prev => ({ ...prev, status: 'Denied' }));
+            alert('Report Denied!');
+    
+            // Navigate back to the map after denying
+            navigate("/dashboard");
+    
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+    
+    // Function to delete the pin
+    const handleDeletePin = async () => {
+        if (!pinId) return; // Ensure pinId exists
+    
+        try {
+            // Delete from DB if pin exists
+            const { error } = await supabase
+                .from('pins')
+                .delete()
+                .eq('pinid', pinId);
+    
+            if (error) throw error;
+    
+            // Remove from local state
+            setPins(prev => prev.filter(pin => pin.pinid !== pinId));
+            alert('Pin deleted successfully');
+    
+        } catch (err) {
+            console.error('Error deleting pin:', err.message);
+            // alert('Failed to delete pin. Please try again.');
+        }
+    };
+    
+    
+
+    if (isLoading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+    if (error) return <Typography color="error" textAlign="center" mt={4}>Error: {error}</Typography>;
+    if (!reportData) return <Typography textAlign="center" mt={4}>No report found for this pin</Typography>;
+
 
     return (
         <>
-            {isCardOpen && (
-                <StyledCard>
-                    {/* Header with title and close button */}
-                    <StyledHeader>
-                        Report Status
-                        <CloseButton onClick={handleCloseCard}>
-                            <CloseIcon />
-                        </CloseButton>
-                    </StyledHeader>
-
-                    {/* Image section */}
+            <StyledCard>
+                <StyledHeader>Report Status</StyledHeader>
+    
+                {reportData.image && (
                     <CardMedia
                         component="img"
-                        height="190"
+                        height="200"  // Reduced from 250
                         image={reportData.image}
                         alt="Report Image"
-                        sx={{ cursor: "pointer" }}
-                        onClick={handleOpenImageModal} // Open modal on click
+                        sx={{ 
+                            cursor: "pointer", 
+                            objectFit: "cover",
+                            maxHeight: "40vh",  // Added max height constraint
+                        }}
+                        onClick={() => setIsImageModalOpen(true)}
                     />
-
-                    {/* Details section */}
-                    <StyledContent>
-                        <DetailItem>
-                            <DetailLabel>Title:</DetailLabel>
-                            <DetailValue>{reportData.title}</DetailValue>
-                        </DetailItem>
-                        <DetailItem>
-                            <DetailLabel>Details:</DetailLabel>
-                            <DetailValue>{reportData.details}</DetailValue>
-                        </DetailItem>
-                        <DetailItem>
-                            <DetailLabel>Report Type:</DetailLabel>
-                            <DetailValue>{reportData.type}</DetailValue>
-                        </DetailItem>
-                        <DetailItem>
-                            <DetailLabel>Status:</DetailLabel>
-                            <DetailValue>{reportData.status}</DetailValue>
-                        </DetailItem>
-                        <DetailItem>
-                            <DetailLabel>Reporter Name:</DetailLabel>
-                            <DetailValue>{reportData.reporterName}</DetailValue>
-                        </DetailItem>
-
-                        <Box textAlign="center">
-                            <ActionButton
-                                startIcon={<FaMapMarkerAlt />}
-                                onClick={handleNavigate} // Handle navigation
-                            >
-                                Go to map
-                            </ActionButton>
-                        </Box>
-                    </StyledContent>
-                </StyledCard>
+                )}
+    
+                <StyledContent>
+                  <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <DetailLabel>Title:</DetailLabel>
+                <DetailValue>{reportData.title}</DetailValue>
+            </DetailItem>
+                {/* <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DetailLabel>Details:</DetailLabel>
+                    <DetailValue>{reportData.details}</DetailValue>
+                </DetailItem> */}
+                <DetailItem>
+                    <DetailLabel>Details:</DetailLabel>
+                    <DetailValue>{reportData.details}</DetailValue>
+                </DetailItem>
+                <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DetailLabel>Report Type:</DetailLabel>
+                    <DetailValue>{reportData.type}</DetailValue>
+                </DetailItem>
+                <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DetailLabel>Status:</DetailLabel>
+                    <DetailValue>{reportData.status}</DetailValue>
+                </DetailItem>
+                <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DetailLabel>Reporter Name:</DetailLabel>
+                    <DetailValue>{reportData.name}</DetailValue>
+                </DetailItem>
+        
+                    <Box textAlign="center">
+    {userRole === 'admin' ? (
+        <>
+            {reportData.status === "Pending" && (
+                <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+                    <ActionButton 
+                        onClick={handleAccept} 
+                        startIcon={<CheckCircleRoundedIcon />}
+                    >
+                        Accept
+                    </ActionButton>
+                    <ActionButton 
+                        onClick={handleDeny} 
+                        startIcon={<CancelRoundedIcon />}
+                    >
+                        Deny
+                    </ActionButton>
+                    <ActionButton 
+                        onClick={() => navigate("/dashboard")}
+                        startIcon={<FaMapMarkerAlt />}
+                    >
+                        Go to map
+                    </ActionButton>
+                </Box>
             )}
 
-            {/* Modal for full-size image */}
-            <Modal open={isImageModalOpen} onClose={handleCloseImageModal}>
-                <ModalImage onClick={handleCloseImageModal}>
-                    <Box
-                        component="img"
-                        src={reportData.image}
-                        alt="Full Size Report Image"
-                        sx={{ maxWidth: "80%", maxHeight: "60%", borderRadius: "10px" }}
+            {reportData.status === "In Progress" && (
+                <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+                    <ActionButton 
+                        onClick={handleMarkAsDone} 
+                        startIcon={<CheckCircleRoundedIcon />}
+                    >
+                        Mark as Done
+                    </ActionButton>
+                    <ActionButton 
+                        onClick={() => navigate("/dashboard")}
+                        startIcon={<FaMapMarkerAlt />}
+                    >
+                        Go to map
+                    </ActionButton>
+                </Box>
+            )}
+
+{reportData.status === "Resolved" && (
+                <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+                    <ActionButton 
+                        onClick={() => navigate("/dashboard")}
+                        startIcon={<FaMapMarkerAlt />}
+                    >
+                        Go to map
+                    </ActionButton>
+                </Box>
+            )}
+
+{reportData.status === "Denied" && (
+                <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+                    <ActionButton 
+                        onClick={() => navigate("/dashboard")}
+                        startIcon={<FaMapMarkerAlt />}
+                    >
+                        Go to map
+                    </ActionButton>
+                </Box>
+            )}
+        </>
+    ) : (
+        <ActionButton 
+            onClick={() => navigate("/dashboard")}
+            startIcon={<FaMapMarkerAlt />}
+        >
+            Go to map
+        </ActionButton>
+    )}
+</Box>
+
+                </StyledContent>
+
+
+            </StyledCard>
+    
+            <Modal open={isImageModalOpen} onClose={() => setIsImageModalOpen(false)}>
+                <ModalImage>
+                    <Box 
+                        component="img" 
+                        src={reportData.image} 
+                        alt="Full Size Report Image" 
+                        sx={{ 
+                            maxWidth: "95%", 
+                            maxHeight: "95%", 
+                            borderRadius: "16px",
+                            objectFit: "contain" 
+                        }} 
                     />
-                    {/* Close button inside the modal */}
-                    <IconButton
-                        onClick={handleCloseImageModal}
-                        style={{
-                            position: "absolute",
-                            top: "20px",
-                            right: "20px",
-                            color: "#fff",
-                        }}
+                    <IconButton 
+                        onClick={() => setIsImageModalOpen(false)} 
+                        sx={{ position: "absolute", top: 20, right: 20, color: "#fff" }}
                     >
                         <CloseIcon />
                     </IconButton>
@@ -371,3 +410,5 @@ const ReportStatus = () => {
 };
 
 export default ReportStatus;
+
+

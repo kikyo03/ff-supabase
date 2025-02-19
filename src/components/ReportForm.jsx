@@ -10,12 +10,12 @@ import supabase from "../helper/supabaseClient";
 import { v4 as uuidv4 } from "uuid";  // Add uuid to generate unique file names
 
 
-const Report = ({ pin, deletePin, setShowReportForm }) => {
+const Report = ({ pin, onCancel, onClose}) => {
     const [userData, setUserData] = useState(null);
     const [report, setReport] = useState({
         title: "",
         details: "",
-        type: pin?.type || "", // Initialize with pin's type
+        type: "", // Initialize with pin's type
         status: "Pending",
         name: "",
         coordinates: pin?.coordinates,
@@ -24,33 +24,36 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
         image: null,
     });
 
+
+
     useEffect(() => {
         if (pin) {
             setReport((prev) => ({
                 ...prev,
                 pinId: pin.id,
                 type: pin.type,
+                coordinates: pin.coordinates,
+                floor: pin.floor, // Add this line
             }));
         }
     }, [pin]);
 
-    const handleCancel = () => {
-        // Close the form by updating the state in the parent
-        setShowReportForm(false); // Hide the report form
+    // const handleCancel = () => {
+    //     // Close the form by updating the state in the parent
+    //     setShowReportForm(false); // Hide the report form
 
-        // Delete the pin
-        deletePin(pin.id);
-    };
+    // };
 
 
 
-    const [error, setError] = useState(false);
+    const [errors, setErrors] = useState({});
     const [open, setOpen] = useState(true);
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [showAllFields, setShowAllFields] = useState(false);
     const [userId, setUserId] = useState(null); // Store the authenticated user ID
 
-    const navigate = useNavigate();
+
+
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -124,88 +127,62 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
         }
     };
 
-
-    // const handleClick = async (e) => {
-    //     e.preventDefault();
-
-    //     // Check if required fields are filled
-    //     if (!report.title || !report.details || !report.type) {
-    //         setError(true);
-    //         return;
-    //     }
-
-    //     try {
-    //         // Insert report into Supabase
-    //         const { error: insertError } = await supabase.from("reports").insert({
-    //             title: report.title,
-    //             details: report.details,
-    //             type: report.type,
-    //             status: report.status,
-    //             user_uid: userId, // Use the userId from Supabase directly
-    //             name: `${userData?.fname || ""} ${userData?.lname || ""}`, // Ensure name is being passed
-    //             coordinates: report.coordinates,
-    //             floor: report.floor,
-    //             pinid: report.pinId,
-    //             image: report.image, // Save the uploaded image URL in the report
-    //         });
-
-    //         if (insertError) throw insertError;
-
-    //         setOpen(false);
-    //         setOpenSnackbar(true);
-    //         setError(false);
-    //         resetForm();
-    //     } catch (err) {
-    //         console.error("Error submitting report:", err.message);
-    //         setError(true);
-    //     }
-    // };
-
+  
     const handleClick = async (e) => {
         e.preventDefault();
+        let newErrors = {};
 
-        // Check if required fields are filled
-        if (!report.title || !report.details || !report.type) {
-            setError(true);
+        // Validate each field separately
+        if (!report.title) newErrors.title = "Title is required.";
+        if (!report.details) newErrors.details = "Details are required.";
+        if (!report.type) newErrors.type = "Type is required.";
+
+        // If there are errors, update state and stop submission
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
         try {
-            // Insert report into Supabase reports table
-            const { error: insertError } = await supabase.from("reports").insert({
+            // Insert report into "reports" table
+            const { error: reportError } = await supabase.from("reports").insert({
                 title: report.title,
                 details: report.details,
                 type: report.type,
                 status: report.status,
-                user_uid: userId, // Use the userId from Supabase directly
-                name: `${userData?.fname || ""} ${userData?.lname || ""}`, // Ensure name is being passed
+                user_uid: userId,
+                name: `${userData?.fname || ""} ${userData?.lname || ""}`,
                 coordinates: report.coordinates,
                 floor: report.floor,
                 pinid: report.pinId,
-                image: report.image, // Save the uploaded image URL in the report
+                image: report.image,
             });
 
-            if (insertError) throw insertError;
+            if (reportError) throw reportError;
 
-            // Insert data into the pins table
-            const { error: pinsError } = await supabase.from("pins").upsert({
+            // Upsert data into "pins" table
+            const { error: pinError } = await supabase.from("pins").upsert({
                 pinid: report.pinId, // Pin ID to update or insert
                 coordinates: report.coordinates,
                 user_uid: userId, // User UID from the current user
                 floor: report.floor, // Floor value
+                status: report.status,
+                type: report.type,
+                name: `${userData?.fname || ""} ${userData?.lname || ""}`
             });
 
-            if (pinsError) throw pinsError;
+            if (pinError) throw pinError;
 
+            // Success: Close modal, show success message, clear errors, reset form
             setOpen(false);
             setOpenSnackbar(true);
-            setError(false);
+            setErrors({});
             resetForm();
         } catch (err) {
             console.error("Error submitting report:", err.message);
-            setError(true);
         }
     };
+
 
 
 
@@ -225,6 +202,15 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
 
 
     // const handleCancel = () => setOpen(false);
+
+    const handleCancel = () => {
+        // Close the form by updating the state in the parent
+        setOpen(false); // Hide the report form
+
+        // Delete the pin
+    };
+
+
 
 
     const handleCloseSnackbar = () => setOpenSnackbar(false);
@@ -273,7 +259,10 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                         name="title"
                         value={report.title}
                         onChange={handleChange}
+                        error={!!errors.title}
+                        helperText={errors.title}
                     />
+
                     <TextField
                         margin="dense"
                         label="Report Details"
@@ -284,7 +273,10 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                         name="details"
                         value={report.details}
                         onChange={handleChange}
+                        error={!!errors.details}
+                        helperText={errors.details}
                     />
+
                     <TextField
                         margin="dense"
                         label="Report Type"
@@ -292,8 +284,11 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                         fullWidth
                         name="type"
                         value={report.type}
+                        // value={"test"}
                         onChange={handleChange}
-                        InputProps={{ readOnly: true }}
+                        // InputProps={{ readOnly: true }}
+                        error={!!errors.type}
+                        helperText={errors.type}
                     />
                     <input
                         type="file"
@@ -333,8 +328,8 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                                 type="text"
                                 fullWidth
                                 name="floor"
-                                // value={report.floor}
-                                value={"test"}
+                                value={report.floor}
+                                // value={"test"}
                                 onChange={handleChange}
                             />
                             <TextField
@@ -357,7 +352,7 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                                 value={report.pinId}
                                 // value={"test"}
                                 onChange={handleChange}
-                                InputProps={{ readOnly: true }}
+                            // InputProps={{ readOnly: true }}
                             />
                             <TextField
                                 margin="dense"
@@ -394,11 +389,11 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                             />
                         </>
                     )}
-                    {error && (
+                    {/* {error && (
                         <p style={{ color: "red", marginTop: "10px" }}>
                             All fields must be filled out.
                         </p>
-                    )}
+                    )} */}
                 </DialogContent>
 
                 <DialogActions style={{ backgroundColor: "#1d3557", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -416,7 +411,8 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
                     </Button>
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                         <Button
-                            onClick={handleCancel}
+                            // onClick={handleCancel}
+                            onClick={onCancel}
                             style={{
                                 fontFamily: "'Poppins', sans-serif",
                                 color: "#e63946",
@@ -455,8 +451,8 @@ const Report = ({ pin, deletePin, setShowReportForm }) => {
     );
 };
 
-Report.propTypes = {
-    pin: PropTypes.string,
-};
+
 
 export default Report;
+
+
