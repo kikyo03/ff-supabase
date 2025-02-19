@@ -136,8 +136,8 @@ const Signup = () => {
                             required
                         />
                     </div>
-                    <div>
-                        {/* Role Selection Dropdown */}
+                    {/* <div>
+                        Role Selection Dropdown
                         <label htmlFor="role">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -161,7 +161,7 @@ const Signup = () => {
                             <option value="student">Student</option>
                             <option value="admin">Admin</option>
                         </select>
-                    </div>
+                    </div> */}
                     <div>
                         <label htmlFor="password-input">
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px">

@@ -6,16 +6,11 @@
 //   plugins: [react()],
 // })
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/", // Ensure correct path resolution
-  build: {
-    outDir: "dist"
-  },
-  server: {
-    port: 5173
-  }
+  base: './' // Fixes white screen issue by using relative paths
 });
