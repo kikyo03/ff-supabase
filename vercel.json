@@ -1,29 +1,13 @@
-
 {
     "version": 2,
     "builds": [
       {
         "src": "package.json",
         "use": "@vercel/static-build",
-        "config": {
-          "distDir": "dist",
-          "cleanUrls": true
-        }
+        "config": { "distDir": "dist" }
       }
     ],
-    "routes": [
-      {
-        "src": "/assets/(.*)",
-        "headers": {
-          "Cache-Control": "public, max-age=31536000, immutable"
-        }
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/",
-        "headers": {
-          "Cache-Control": "no-cache"
-        }
-      }
+    "rewrites": [
+      { "source": "/(.*)", "destination": "/index.html" }
     ]
   }
