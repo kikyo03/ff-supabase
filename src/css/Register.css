@@ -219,7 +219,7 @@ a:hover {
     text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
     h1 {
         font-size: 2rem;
     }
@@ -245,7 +245,126 @@ a:hover {
     form button {
         padding: 0.5em 1.5em;
     }
+} */
+/* 
+@media (max-width: 768px) {
+    .wrapper {
+        max-width: 90%;
+        padding: 15px;
+        margin-top: 10px;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    form {
+        gap: 15px;
+    }
+
+    form > div {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    form label {
+        width: 100%;
+        border-radius: 10px 10px 0 0;
+        height: 40px;
+    }
+
+    form input {
+        width: 100%;
+        border-radius: 0 0 10px 10px;
+        border-left: 2px solid var(--input-color);
+        height: 45px;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 55%;
+        transform: translateY(-50%);
+    }
+
+    form .submit-btn {
+        width: 100%;
+        padding: 0.8em 2em;
+    }
 }
+
+@media (max-width: 480px) {
+    html {
+        font-size: 11pt;
+    }
+
+    .wrapper {
+        padding: 10px;
+        border-radius: 15px;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    form input {
+        padding: 0.8em;
+        font-size: 0.9rem;
+    }
+
+    form label svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toggle-password img {
+        width: 20px;
+        height: 20px;
+    }
+
+    p {
+        font-size: 0.9rem;
+    }
+} */
+
+@media (max-width: 768px) {
+    form > div {
+        flex-direction: row; /* Change from column to row */
+        align-items: center;
+        gap: 10px;
+    }
+
+    form label {
+        width: auto; /* Adjust width */
+        border-radius: 10px 0 0 10px; /* Rounded left corners */
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+    }
+
+    form input {
+        width: 100%;
+        border-radius: 0 10px 10px 0; /* Rounded right corners */
+        border-left: none; /* Remove left border */
+        height: 45px;
+    }
+}
+
+@media (max-width: 480px) {
+    form label svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    form > div {
+        gap: 8px; /* Reduce gap for smaller screens */
+    }
+}
+
+
 
 .Toastify__toast-container {
     top: 50% !important;
