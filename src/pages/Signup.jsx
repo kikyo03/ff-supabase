@@ -11,7 +11,6 @@ const Signup = () => {
     const [fname, setFname] = useState('');
     const [lname, setLname] = useState('');
     const [email, setEmail] = useState('');
-    const [role, setRole] = useState('');
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setPasswordVisible] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -46,7 +45,6 @@ const Signup = () => {
                         email,
                         fname,
                         lname,
-                        role,
                     },
                 ]);
 
@@ -67,7 +65,6 @@ const Signup = () => {
             setPassword('');
             setFname('');
             setLname('');
-            setRole('');
 
             // Redirect to login after a delay
             setTimeout(() => {

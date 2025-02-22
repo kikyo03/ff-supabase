@@ -11,7 +11,7 @@ import {
     Chip,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash,  FaRadiation  } from "react-icons/fa";
 import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/Navbar';
 import supabase from "../helper/supabaseClient";
@@ -38,6 +38,7 @@ const History = () => {
 
     const [reports, setReports] = useState([]); // Initialize as an empty array
     const [loading, setLoading] = useState(true);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
 
     const theme = useTheme();
 
@@ -87,7 +88,7 @@ const History = () => {
             // Create a base query
             let query = supabase
                 .from('reports')
-                .select('id, title, details, status, type, image, created_at, name')
+                .select('id, title, details, status, type, image, created_at, name, specific_place, pinid')
                 .order('created_at', { ascending: false });
     
             // Add filter only for non-admin users
@@ -114,18 +115,76 @@ const History = () => {
 
 
 
+    // const handleDeleteReport = async (id) => {
+    //     try {
+    //         const { error } = await supabase
+    //             .from('reports')
+    //             .delete()
+    //             .eq('id', id);
+
+    //         if (error) throw error;
+
+    //         setReports((prevReports) => prevReports.filter(report => report.id !== id));
+    //     } catch (error) {
+    //         console.error("Error deleting report:", error);
+    //     }
+    // };
+
+    // const handleDeleteReport = async (id) => {
+    //     const confirmDelete = window.confirm("Are you sure you want to delete this report?");
+        
+    //     if (!confirmDelete) return;
+    
+    //     try {
+    //         const { error } = await supabase
+    //             .from('reports')
+    //             .delete()
+    //             .eq('id', id);
+    
+    //         if (error) throw error;
+    
+    //         setReports((prevReports) => prevReports.filter(report => report.id !== id));
+    //     } catch (error) {
+    //         console.error("Error deleting report:", error);
+    //     }
+    // };
     const handleDeleteReport = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this report?")) return;
+    
         try {
-            const { error } = await supabase
+            // First get the associated pin ID from the report
+            const { data: reportData, error: reportError } = await supabase
+                .from('reports')
+                .select('pinid')
+                .eq('id', id)
+                .single();
+    
+            if (reportError) throw reportError;
+    
+            // Delete the pin first if it exists
+            if (reportData.pinid) {
+                const { error: pinsError } = await supabase
+                    .from('pins')
+                    .delete()
+                    .eq('pinid', reportData.pinid);
+    
+                if (pinsError) throw pinsError;
+            }
+    
+            // Then delete the report
+            const { error: reportsError } = await supabase
                 .from('reports')
                 .delete()
                 .eq('id', id);
-
-            if (error) throw error;
-
-            setReports((prevReports) => prevReports.filter(report => report.id !== id));
+    
+            if (reportsError) throw reportsError;
+    
+            // Update UI state
+            setReports(prev => prev.filter(report => report.id !== id));
+            
         } catch (error) {
-            console.error("Error deleting report:", error);
+            console.error("Deletion failed:", error);
+            alert(`Deletion failed: ${error.message}`);
         }
     };
 
@@ -148,17 +207,83 @@ const History = () => {
         </div>;
     }
 
+    // Add this function before the return statement
+const handleDeleteAllReports = async () => {
+    if (formData.role !== 'admin') return;
+    
+    if (!window.confirm("WARNING: This will permanently delete ALL reports and associated pins!\n\nAre you absolutely sure?")) return;
+
+    try {
+        setIsDeletingAll(true);
+        
+        // First delete all associated pins
+        const { data: allReports } = await supabase
+            .from('reports')
+            .select('pinid');
+        
+        const pinIds = allReports?.map(r => r.pinid).filter(Boolean);
+        if (pinIds?.length > 0) {
+            await supabase
+                .from('pins')
+                .delete()
+                .in('pinid', pinIds);
+        }
+
+        // Then delete all reports
+        const { error } = await supabase
+            .from('reports')
+            .delete()
+            .neq('id', 0); // Requires proper RLS policies for admin access
+
+        if (error) throw error;
+        
+        setReports([]);
+        alert('All reports and associated pins deleted successfully');
+    } catch (error) {
+        console.error('Mass deletion error:', error);
+        alert(`Deletion failed: ${error.message}`);
+    } finally {
+        setIsDeletingAll(false);
+    }
+};
+
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Navbar userDetails={formData} />
-            <Box sx={theme.components.MuiBox?.styleOverrides?.root || {}}>
+            {/* <Box sx={theme.components.MuiBox?.styleOverrides?.root || {}}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Report History
                 </Typography>
                 <Typography variant="subtitle1">
                     User: {formData.name} | UID: {formData.customUid}
                 </Typography>
-            </Box>
+            </Box> */}
+
+<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Typography variant="h4" component="h1" gutterBottom>
+        Report History
+    </Typography>
+    
+    {formData.role === 'admin' && (
+        <Button
+            variant="contained"
+            color="error"
+            startIcon={isDeletingAll ? <CircularProgress size={20} color="inherit" /> : <FaRadiation />}
+            onClick={handleDeleteAllReports}
+            disabled={isDeletingAll || reports.length === 0}
+            sx={{
+                minWidth: 200,
+                backgroundColor: '#ff4444',
+                '&:hover': {
+                    backgroundColor: '#cc0000'
+                }
+            }}
+        >
+            {isDeletingAll ? 'Nuking Data...' : 'Delete All Reports'}
+        </Button>
+    )}
+</Box>
+            
 
             {reports.length === 0 ? (
                 <Typography variant="body1" color="textSecondary" sx={{ mt: 4 }}>
@@ -218,6 +343,8 @@ const History = () => {
                                                 <Chip label={`Status: ${report.status}`} color={getStatusColor(report.status)} />
                                                 <Chip label={`Created At: ${new Date(report.created_at).toLocaleString()}`} variant="outlined" />
                                                 <Chip label={`Reporter Name: ${report.name}`} variant="outlined" />
+                                                <Chip label={`Place: ${report.specific_place}`} variant="outlined" />
+                                                <Chip label={`Pin ID: ${report.pinid}`} variant="outlined" />
                                             </Box>
                                         </CardContent>
                                     </Grid>

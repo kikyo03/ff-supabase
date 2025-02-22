@@ -20,6 +20,7 @@ const Report = ({ pin, onCancel, onClose}) => {
         name: "",
         coordinates: pin?.coordinates,
         floor: "",
+        place: "",
         pinId: pin?.id || "", // Initialize with pin's id
         image: null,
     });
@@ -34,6 +35,7 @@ const Report = ({ pin, onCancel, onClose}) => {
                 type: pin.type,
                 coordinates: pin.coordinates,
                 floor: pin.floor, // Add this line
+                place: pin.place, // Add this line
             }));
         }
     }, [pin]);
@@ -154,6 +156,7 @@ const Report = ({ pin, onCancel, onClose}) => {
                 name: `${userData?.fname || ""} ${userData?.lname || ""}`,
                 coordinates: report.coordinates,
                 floor: report.floor,
+                specific_place: report.place,
                 pinid: report.pinId,
                 image: report.image,
             });
@@ -329,6 +332,16 @@ const Report = ({ pin, onCancel, onClose}) => {
                                 fullWidth
                                 name="floor"
                                 value={report.floor}
+                                // value={"test"}
+                                onChange={handleChange}
+                            />
+                             <TextField
+                                margin="dense"
+                                label="Specific Place"
+                                type="text"
+                                fullWidth
+                                name="place"
+                                value={report.place}
                                 // value={"test"}
                                 onChange={handleChange}
                             />

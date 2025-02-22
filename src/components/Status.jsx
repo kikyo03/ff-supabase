@@ -303,6 +303,10 @@ const ReportStatus = () => {
                     <DetailLabel>Reporter Name:</DetailLabel>
                     <DetailValue>{reportData.name}</DetailValue>
                 </DetailItem>
+                <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DetailLabel>Place:</DetailLabel>
+                    <DetailValue>{reportData.specific_place}</DetailValue>
+                </DetailItem>
         
                     <Box textAlign="center">
     {userRole === 'admin' ? (

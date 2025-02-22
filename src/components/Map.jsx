@@ -45,6 +45,7 @@ const FloorContent = ({ areas, showImages, pins, onAreaClick, onPinClick, textSt
                 key={area.id}
                 onClick={(e) => onAreaClick(e, area)}
                 style={{ cursor: "pointer" }}
+                data-label={area.label} // Add this attribute
             >
                 <rect
                     x={area.x}
@@ -115,9 +116,11 @@ const FloorMap = () => {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [userRole, setUserRole] = useState('');
+    const [selectedAreaLabel, setSelectedAreaLabel] = useState('');
 
 
-
+    const floor1Count = pins.filter(pin => pin.floor === "1").length;
+    const floor2Count = pins.filter(pin => pin.floor === "2").length;
     
 
     const navigate = useNavigate();
@@ -139,6 +142,7 @@ const FloorMap = () => {
     };
 
     const handleAreaClick = (event, area) => {
+        console.log(area.label); // Access label directly from area object
         // Check pin limit before proceeding
         if (pins.length >= 5) {
             alert("Maximum limit of 5 pins reached. Please delete existing pins to create new ones.");
@@ -152,6 +156,7 @@ const FloorMap = () => {
         const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse());
     
         setSelectedPosition({ x, y });
+        setSelectedAreaLabel(area.label); // Store the area label in state
         setShowPinModal(true);
     };
 
@@ -184,6 +189,7 @@ const FloorMap = () => {
             coordinates: selectedPosition,
             status: "Pending", // Default status
             floor: String(currentFloor), // Store the current floor
+            place: selectedAreaLabel // Use the stored area label
           };
       
           console.log(newPin); // For debugging
@@ -411,7 +417,7 @@ useEffect(() => {
             ) : (
                 <>
                     <div style={responsiveStyles.controlButtons}>
-                        <button
+                        {/* <button
                             style={{
                                 ...responsiveStyles.button,
                                 backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
@@ -422,7 +428,121 @@ useEffect(() => {
                         >
                             <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
                             Floor {currentFloor === 1 ? 2 : 1}
-                        </button>
+                        </button> */}
+{/* 
+<button
+    style={{
+        ...responsiveStyles.button,
+        backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
+    }}
+    onMouseEnter={() => setIsFloorHovered(true)}
+    onMouseLeave={() => setIsFloorHovered(false)}
+    onClick={toggleFloor}
+>
+    <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
+    Floor {currentFloor === 1 ? 2 : 1} ({currentFloor === 1 ? floor2Count : floor1Count}) Pins
+</button>
+ */}
+
+{/* <button
+    style={{
+        ...responsiveStyles.button,
+        backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    }}
+    onMouseEnter={() => setIsFloorHovered(true)}
+    onMouseLeave={() => setIsFloorHovered(false)}
+    onClick={toggleFloor}
+>
+    <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
+    <span>Floor {currentFloor === 1 ? 2 : 1} </span>
+    <span
+        style={{
+            backgroundColor: '#e63946',
+            borderRadius: '999px',
+            padding: '2px 8px',
+            fontSize: '0.8em',
+            fontWeight: 'bold',
+            position: 'absolute',
+            right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}
+    >
+        {currentFloor === 1 ? floor2Count : floor1Count}
+    </span>
+</button> */}
+
+{/* Add this div wherever you want to display the user info */}
+<div 
+  style={{
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    zIndex: 1000,
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    fontSize: 'clamp(14px, 1.5vw, 16px)'
+  }}
+>
+  <span 
+    style={{
+      backgroundColor: '#457B9D',
+      color: 'white',
+      padding: '2px 8px',
+      borderRadius: '4px',
+      fontSize: '0.8em'
+    }}
+  >
+    {userRole}
+  </span>
+</div>
+
+<button
+    style={{
+        ...responsiveStyles.button,
+        backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        // Add margin to prevent overlap if button is near corner
+        marginRight: '120px' // Adjust based on your needs
+    }}
+    onMouseEnter={() => setIsFloorHovered(true)}
+    onMouseLeave={() => setIsFloorHovered(false)}
+    onClick={toggleFloor}
+>
+<MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
+    <span>Floor {currentFloor === 1 ? 2 : 1} </span>
+    <span
+        style={{
+            backgroundColor: '#e63946',
+            borderRadius: '999px',
+            padding: '2px 8px',
+            fontSize: '0.8em',
+            fontWeight: 'bold',
+            position: 'absolute',
+            right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}
+    >
+        {currentFloor === 1 ? floor2Count : floor1Count}
+    </span>
+
+</button>
+
 
                         <button
                             style={{
@@ -571,10 +691,11 @@ useEffect(() => {
             <>
                <p style={{ fontSize: 'clamp(14px, 2vw, 16px)', color: '#457B9D' }}>
   <strong>Pin ID:</strong> {selectedPin?.pinid}
+
 </p>
-                {/* <p style={{ fontSize: 'clamp(14px, 2vw, 16px)', color: '#457B9D' }}>
-                    <strong>Status:</strong> {selectedPin.status}
-                </p> */}
+                <p style={{ fontSize: 'clamp(14px, 2vw, 16px)', color: '#457B9D' }}>
+                    <strong>Reporter Name:</strong> {selectedPin.name}
+                </p>
             </>
         )}
 
