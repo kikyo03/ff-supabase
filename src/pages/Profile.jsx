@@ -275,21 +275,6 @@ const User = () => {
                         </Box>
                     </Grid>
 
-                    {/* <Grid item xs={12} sm={6}>
-                        <Box display="flex" alignItems="center">
-                            <IconWrapper>
-                                <FaIdCard />
-                            </IconWrapper>
-                            <TextField
-                                fullWidth
-                                label="User ID"
-                                value={formData.customUid}
-                                inputProps={{ readOnly: true }}
-                                sx={{ "& .MuiInputBase-input.Mui-disabled": { opacity: 0.8 } }}
-                            />
-                        </Box>
-                    </Grid> */}
-
                     {formData.role !== "admin" && (
                         <Grid item xs={12} sm={6}>
                             <Box display="flex" alignItems="center">

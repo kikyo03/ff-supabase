@@ -255,7 +255,7 @@ const Navbar = () => {
 
             // Redirect after a delay to allow the toast to display
             setTimeout(() => {
-                navigate('/login');
+                navigate('/register');
             }, 2000);
         } catch (error) {
             console.error('Sign-out error:', error);

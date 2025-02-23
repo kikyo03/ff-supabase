@@ -6,14 +6,14 @@ const theme = createTheme({
         primary: { main: '#1D3557' },
         secondary: { main: '#457B9D' },
         text: {
-            primary: '#2C3E50', // Global primary text color
+            primary: '#1D3557', // Global primary text color
             secondary: '#7F8C8D', // Global secondary text color
         },
     },
     typography: {
         fontFamily: 'Poppins, Arial, sans-serif', // Set Poppins as default font
         allVariants: {
-            color: '#2C3E50', // Default font color for all text
+            color: '#1D3557', // Default font color for all text
         },
     },
     shape: {
@@ -38,7 +38,7 @@ const theme = createTheme({
                     borderColor: '#1D3557',
                     color: '#1D3557',
                     '&:hover': {
-                        backgroundColor: '#457B9D',
+                        backgroundColor: '#1D3557',
                         color: '#FFFFFF',
                     },
                 },
@@ -89,11 +89,11 @@ const theme = createTheme({
             styleOverrides: {
                 h4: {
                     marginBottom: 1, // equivalent to theme.spacing(2)
-                    color: '#A8DADC',
+                    color: '#1D3557',
                     fontWeight: 'bold', // Bold text
                 },
                 subtitle1: {
-                    color: '#A8DADC', // text.secondary color
+                    color: '#1D3557', // text.secondary color
                 },
             },
         },

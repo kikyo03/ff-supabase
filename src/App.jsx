@@ -8,7 +8,7 @@ import theme from './css/Theme';
 
 import Landing from "./pages/Landing";
 import Signup from "./pages/Signup";
-import Login from "./pages/Login";
+// import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Wrapper from "./components/Wrapper";
 import Profile from "./pages/Profile";
@@ -19,6 +19,7 @@ import LocalStorage from './components/LocalStorage'
 import Status from "./components/Status";
 // import Sample from "./components/Sample";
 import Pin from "./components/Pin";
+import Register from "./pages/Register";
 
 function App() {
   return (
@@ -26,13 +27,14 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Landing page */}
-          <Route path="/" element={<Signup />} />
+          <Route path="/" element={<Register />} />
 
           {/* Register */}
-          <Route path="/signup" element={<Signup />} />
+          {/* <Route path="/signup" element={<Signup />} /> */}
+          <Route path="/register" element={<Register />} />
 
           {/* Login */}
-          <Route path="/login" element={<Login />} />
+          {/* <Route path="/login" element={<Login />} /> */}
 
           {/* Test page */}
           <Route path="/test" element={<Test />} />
