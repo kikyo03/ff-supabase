@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { areas1, areas2 } from "../helper/areas";
 import supabase from "../helper/supabaseClient";
-import CircularProgress from "@mui/material/CircularProgress";
-import Modal from "@mui/material/Modal";
-import Button from "@mui/material/Button";
+// import CircularProgress from "@mui/material/CircularProgress";
+import { 
+    Alert,
+    IconButton,
+    Collapse,
+    CircularProgress,
+    Modal,
+    Button,
+  } from "@mui/material";
+import { FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import MapIcon from '@mui/icons-material/Map';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
@@ -117,6 +124,10 @@ const FloorMap = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [userRole, setUserRole] = useState('');
     const [selectedAreaLabel, setSelectedAreaLabel] = useState('');
+    const [showNotification, setShowNotification] = useState(false);
+    const [latestNotification, setLatestNotification] = useState(null);
+    
+    
 
 
     const floor1Count = pins.filter(pin => pin.floor === "1").length;
@@ -141,8 +152,34 @@ const FloorMap = () => {
         }, 500);
     };
 
+    // const handleAreaClick = (event, area) => {
+    //     console.log(area.label); // Access label directly from area object
+    //     // Check pin limit before proceeding
+    //     if (pins.length >= 5) {
+    //         alert("Maximum limit of 5 pins reached. Please delete existing pins to create new ones.");
+    //         return;
+    //     }
+    
+    //     const svg = event.currentTarget.ownerSVGElement;
+    //     const point = svg.createSVGPoint();
+    //     point.x = event.clientX;
+    //     point.y = event.clientY;
+    //     const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse());
+    
+    //     setSelectedPosition({ x, y });
+    //     setSelectedAreaLabel(area.label); // Store the area label in state
+    //     setShowPinModal(true);
+    // };
+
     const handleAreaClick = (event, area) => {
-        console.log(area.label); // Access label directly from area object
+        // console.log(area.label);
+        
+        // Prevent admins from creating pins
+        if (userRole === 'admin') {
+            alert("Admins cannot create pins.");
+            return;
+        }
+    
         // Check pin limit before proceeding
         if (pins.length >= 5) {
             alert("Maximum limit of 5 pins reached. Please delete existing pins to create new ones.");
@@ -156,7 +193,7 @@ const FloorMap = () => {
         const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse());
     
         setSelectedPosition({ x, y });
-        setSelectedAreaLabel(area.label); // Store the area label in state
+        setSelectedAreaLabel(area.label);
         setShowPinModal(true);
     };
 
@@ -180,7 +217,7 @@ const FloorMap = () => {
     };
 
 
-
+    // old ! gumagana to ah
     const confirmPinPlacement = () => {
         if (selectedPinType && selectedPosition) {
           const newPin = {
@@ -194,7 +231,7 @@ const FloorMap = () => {
       
           console.log(newPin); // For debugging
       
-          setPins((prevPins) => [...prevPins, newPin]);
+        //   setPins((prevPins) => [...prevPins, newPin]);
           setSelectedPin(newPin); // Set the newly created pin as selected
           setShowConfirmation(false);
           setShowPinModal(false);
@@ -202,11 +239,13 @@ const FloorMap = () => {
         }
       };
 
+
     const handleCloseReportModal = () => {
         setShowReportModal(false);
         setSelectedPin(null);
     };
 
+    //old gumagana
     const handleCancelPin = () => {
         if (!selectedPin) return;
         
@@ -220,6 +259,7 @@ const FloorMap = () => {
         setSelectedPinType(null);
     };
 
+    
 
     const handleDeletePin = async () => {
         if (!selectedPin) return;
@@ -245,6 +285,73 @@ const FloorMap = () => {
             alert(`Failed to delete pin: ${err.message}`);
         }
     };
+
+    // useEffect(() => {
+    //     const channel = supabase
+    //         .channel('pins')
+    //         .on('postgres_changes', {
+    //             event: '*',
+    //             schema: 'public',
+    //             table: 'pins'
+    //         }, (payload) => {
+    //             if (payload.eventType === 'INSERT') {
+    //                 setPins(prev => [...prev, {
+    //                     ...payload.new,
+    //                     coordinates: JSON.parse(payload.new.coordinates)
+    //                 }]);
+    //             } else if (payload.eventType === 'UPDATE') {
+    //                 setPins(prev => prev.map(pin => 
+    //                     pin.pinid === payload.new.pinid ? {
+    //                         ...payload.new,
+    //                         coordinates: JSON.parse(payload.new.coordinates)
+    //                     } : pin
+    //                 ));
+    //             } else if (payload.eventType === 'DELETE') {
+    //                 setPins(prev => prev.filter(pin => pin.pinid !== payload.old.pinid));
+    //             }
+    //         })
+    //         .subscribe();
+    
+    //     return () => {
+    //         supabase.removeChannel(channel);
+    //     };
+    // }, []);
+
+    useEffect(() => {
+        // Realtime subscription for ALL pin changes
+        const channel = supabase
+          .channel('public:pins')
+          .on('postgres_changes', 
+            {
+              event: '*',
+              schema: 'public',
+              table: 'pins'
+            },
+            (payload) => {
+              // Handle INSERT, UPDATE, DELETE for ALL pins
+              if (payload.eventType === 'INSERT') {
+                setPins(prev => [...prev, {
+                  ...payload.new,
+                  coordinates: JSON.parse(payload.new.coordinates)
+                }]);
+              } else if (payload.eventType === 'UPDATE') {
+                setPins(prev => prev.map(pin => 
+                  pin.pinid === payload.new.pinid ? {
+                    ...payload.new,
+                    coordinates: JSON.parse(payload.new.coordinates)
+                  } : pin
+                ));
+              } else if (payload.eventType === 'DELETE') {
+                setPins(prev => prev.filter(pin => pin.pinid !== payload.old.pinid));
+              }
+            }
+          )
+          .subscribe();
+      
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }, []); // No dependencies - runs once
 
    
     // Inside the useEffect for fetching user role
@@ -276,43 +383,141 @@ useEffect(() => {
 }, []);
 
 
+// useEffect(() => {
+//     const fetchPins = async () => {
+//         try {
+//             setIsLoading(true);
+//             const { data: { user } } = await supabase.auth.getUser();
+            
+//             // Create base query with status filter
+//             let query = supabase
+//                 .from('pins')
+//                 .select('*')
+
+//             // Add user filter for non-admin users
+//             if (userRole !== 'admin') {
+//                 query = query.eq('user_uid', user.id);
+//             }
+
+//             // Execute query
+//             const { data, error } = await query;
+
+//             if (error) throw error;
+            
+//             // Parse coordinates
+//             const parsedPins = data.map((pin) => ({
+//                 ...pin,
+//                 coordinates: pin.coordinates ? JSON.parse(pin.coordinates) : { x: 0, y: 0 }
+//             }));
+
+//             setPins(parsedPins);
+//         } catch (err) {
+//             console.error("Error fetching pins:", err.message);
+//         } finally {
+//             setIsLoading(false);
+//         }
+//     };
+
 useEffect(() => {
     const fetchPins = async () => {
-        try {
-            setIsLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            // Create base query with status filter
-            let query = supabase
-                .from('pins')
-                .select('*')
-
-            // Add user filter for non-admin users
-            if (userRole !== 'admin') {
-                query = query.eq('user_uid', user.id);
-            }
-
-            // Execute query
-            const { data, error } = await query;
-
-            if (error) throw error;
-            
-            // Parse coordinates
-            const parsedPins = data.map((pin) => ({
-                ...pin,
-                coordinates: pin.coordinates ? JSON.parse(pin.coordinates) : { x: 0, y: 0 }
-            }));
-
-            setPins(parsedPins);
-        } catch (err) {
-            console.error("Error fetching pins:", err.message);
-        } finally {
-            setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+  
+        // Base query
+        let query = supabase.from('pins').select('*');
+  
+        // Filter for non-admins
+        if (userRole !== 'admin') {
+          query = query.eq('user_uid', user.id);
         }
+  
+        const { data, error } = await query;
+        if (error) throw error;
+  
+        const parsedPins = data.map(pin => ({
+          ...pin,
+          coordinates: JSON.parse(pin.coordinates)
+        }));
+  
+        setPins(parsedPins);
+      } catch (err) {
+        console.error("Fetch error:", err.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
+  
     fetchPins();
-}, [userRole]);
+  }, [userRole]); // Refetch when user role changes
+
+    // realtime!
+
+    // Realtime subscription
+//   const channel = supabase
+//   .channel('pins')
+//   .on('postgres_changes', {
+//     event: '*',
+//     schema: 'public',
+//     table: 'pins'
+//   }, (payload) => {
+//     // Handle realtime updates
+//     if (payload.eventType === 'INSERT') {
+//       setPins(prev => [...prev, {
+//         ...payload.new,
+//         coordinates: JSON.parse(payload.new.coordinates)
+//       }]);
+//     } else if (payload.eventType === 'UPDATE') {
+//       setPins(prev => prev.map(pin => 
+//         pin.pinid === payload.new.pinid ? {
+//           ...payload.new,
+//           coordinates: JSON.parse(payload.new.coordinates)
+//         } : pin
+//       ));
+//     } else if (payload.eventType === 'DELETE') {
+//       setPins(prev => prev.filter(pin => pin.pinid !== payload.old.pinid));
+//     }
+//   })
+//   .subscribe();
+
+// fetchPins();
+
+// // Cleanup function
+// return () => {
+//   supabase.removeChannel(channel);
+// };
+    
+//     // fetchPins();
+// }, [userRole]);
+
+
+useEffect(() => {
+    const channel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        async (payload) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          if (payload.new.user_id === user.id) {
+            setLatestNotification(payload.new);
+            setShowNotification(true);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+              setShowNotification(false);
+            }, 5000);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
     const areasToDisplay = currentFloor === 1 ? areas1 : areas2;
 
@@ -417,66 +622,39 @@ useEffect(() => {
             ) : (
                 <>
                     <div style={responsiveStyles.controlButtons}>
-                        {/* <button
-                            style={{
-                                ...responsiveStyles.button,
-                                backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
-                            }}
-                            onMouseEnter={() => setIsFloorHovered(true)}
-                            onMouseLeave={() => setIsFloorHovered(false)}
-                            onClick={toggleFloor}
-                        >
-                            <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
-                            Floor {currentFloor === 1 ? 2 : 1}
-                        </button> */}
-{/* 
-<button
-    style={{
-        ...responsiveStyles.button,
-        backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
-    }}
-    onMouseEnter={() => setIsFloorHovered(true)}
-    onMouseLeave={() => setIsFloorHovered(false)}
-    onClick={toggleFloor}
->
-    <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
-    Floor {currentFloor === 1 ? 2 : 1} ({currentFloor === 1 ? floor2Count : floor1Count}) Pins
-</button>
- */}
-
-{/* <button
-    style={{
-        ...responsiveStyles.button,
-        backgroundColor: isFloorHovered ? "#1D3557" : "#457B9D",
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-    }}
-    onMouseEnter={() => setIsFloorHovered(true)}
-    onMouseLeave={() => setIsFloorHovered(false)}
-    onClick={toggleFloor}
->
-    <MapIcon style={{ fontSize: "clamp(16px, 2vw, 24px)" }} />
-    <span>Floor {currentFloor === 1 ? 2 : 1} </span>
-    <span
-        style={{
-            backgroundColor: '#e63946',
-            borderRadius: '999px',
-            padding: '2px 8px',
-            fontSize: '0.8em',
-            fontWeight: 'bold',
-            position: 'absolute',
-            right: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}
-    >
-        {currentFloor === 1 ? floor2Count : floor1Count}
-    </span>
-</button> */}
-
+                       
+ {/* Notification Banner */}
+ <div style={{
+        position: 'fixed',
+        top: '80px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1001,
+        width: 'clamp(300px, 90vw, 600px)'
+      }}>
+        <Collapse in={showNotification}>
+          <Alert
+            severity="info"
+            action={
+              <IconButton
+                aria-label="close"
+                color="inherit"
+                size="small"
+                onClick={() => setShowNotification(false)}
+              >
+                <FaTimes fontSize="inherit" />
+              </IconButton>
+            }
+            sx={{
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              borderRadius: '8px',
+              fontFamily: 'Poppins'
+            }}
+          >
+            {latestNotification?.message}
+          </Alert>
+        </Collapse>
+      </div>
 {/* Add this div wherever you want to display the user info */}
 <div 
   style={{

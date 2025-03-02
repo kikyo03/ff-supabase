@@ -92,7 +92,7 @@ html {
 
 .navbar-item-text {
     margin-left: 10px;
-    color: var(--text-color);
+    color: var(--input-color);
     font-weight: bold;
 
 }
@@ -106,13 +106,15 @@ html {
 
 
 .navbar-item:hover {
-    background-color: var(--base-color);
+    background-color: var(--text-color);
     opacity: 0.9;
 }
 
-
-
-
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
 
 /* Media Query for Small Screens */
 @media (max-width: 768px) {

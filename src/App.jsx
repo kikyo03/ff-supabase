@@ -20,6 +20,7 @@ import Status from "./components/Status";
 // import Sample from "./components/Sample";
 import Pin from "./components/Pin";
 import Register from "./pages/Register";
+import Notification from "./components/Notification";
 
 function App() {
   return (
@@ -91,6 +92,13 @@ function App() {
           <Route path="/status/:pinId" element={
             <Wrapper>
               <Status />
+            </Wrapper>
+          } ></Route>
+
+          {/* Notification */}
+          <Route path="/notification" element={
+            <Wrapper>
+              <Notification />
             </Wrapper>
           } ></Route>
 

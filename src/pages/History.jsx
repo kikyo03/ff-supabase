@@ -208,42 +208,89 @@ const History = () => {
     }
 
     // Add this function before the return statement
-const handleDeleteAllReports = async () => {
-    if (formData.role !== 'admin') return;
+// const handleDeleteAllReports = async () => {
+//     if (formData.role !== 'admin') return;
     
-    if (!window.confirm("WARNING: This will permanently delete ALL reports and associated pins!\n\nAre you absolutely sure?")) return;
+//     if (!window.confirm("WARNING: This will permanently delete ALL reports and associated pins!\n\nAre you absolutely sure?")) return;
+
+//     try {
+//         setIsDeletingAll(true);
+        
+//         // First delete all associated pins
+//         const { data: allReports } = await supabase
+//             .from('reports')
+//             .select('pinid');
+        
+//         const pinIds = allReports?.map(r => r.pinid).filter(Boolean);
+//         if (pinIds?.length > 0) {
+//             await supabase
+//                 .from('pins')
+//                 .delete()
+//                 .in('pinid', pinIds);
+//         }
+
+//         // Then delete all reports
+//         const { error } = await supabase
+//             .from('reports')
+//             .delete()
+//             .neq('id', 0); // Requires proper RLS policies for admin access
+
+//         if (error) throw error;
+        
+//         setReports([]);
+//         alert('All reports and associated pins deleted successfully');
+//     } catch (error) {
+//         console.error('Mass deletion error:', error);
+//         alert(`Deletion failed: ${error.message}`);
+//     } finally {
+//         setIsDeletingAll(false);
+//     }
+// };
+
+const handleDeleteAllReports = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL reports? This action cannot be undone.")) return;
 
     try {
-        setIsDeletingAll(true);
-        
-        // First delete all associated pins
-        const { data: allReports } = await supabase
+        // Fetch all reports to get their pin IDs and report IDs
+        const { data: allReports, error: fetchError } = await supabase
             .from('reports')
-            .select('pinid');
-        
-        const pinIds = allReports?.map(r => r.pinid).filter(Boolean);
-        if (pinIds?.length > 0) {
-            await supabase
+            .select('id, pinid');
+
+        if (fetchError) throw fetchError;
+
+        // Collect unique pin IDs (excluding nulls)
+        const pinIds = [...new Set(allReports.map(report => report.pinid).filter(Boolean))];
+
+        // Delete associated pins in one batch
+        if (pinIds.length > 0) {
+            const { error: deletePinsError } = await supabase
                 .from('pins')
                 .delete()
                 .in('pinid', pinIds);
+
+            if (deletePinsError) throw deletePinsError;
         }
 
-        // Then delete all reports
-        const { error } = await supabase
-            .from('reports')
-            .delete()
-            .neq('id', 0); // Requires proper RLS policies for admin access
+        // Collect all report IDs
+        const reportIds = allReports.map(report => report.id);
 
-        if (error) throw error;
-        
+        // Delete all reports in one batch
+        if (reportIds.length > 0) {
+            const { error: deleteReportsError } = await supabase
+                .from('reports')
+                .delete()
+                .in('id', reportIds);
+
+            if (deleteReportsError) throw deleteReportsError;
+        }
+
+        // Clear reports from state
         setReports([]);
-        alert('All reports and associated pins deleted successfully');
+        alert('All reports and associated pins have been deleted successfully!');
+
     } catch (error) {
-        console.error('Mass deletion error:', error);
+        console.error("Failed to delete all reports:", error);
         alert(`Deletion failed: ${error.message}`);
-    } finally {
-        setIsDeletingAll(false);
     }
 };
 
