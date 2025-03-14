@@ -156,7 +156,7 @@ const AuthForm = () => {
                                         sx={{
                                             "& label": {
                                                 backgroundColor: "transparent",
-                                                padding: "0 5px",
+                                                padding: "0px 5px",
                                             },
                                             "& label.Mui-focused": {
                                                 backgroundColor: "transparent",

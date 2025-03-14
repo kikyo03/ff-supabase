@@ -116,6 +116,16 @@ html {
   gap: 1rem;
 }
 
+/* Add to Navbar.css */
+.MuiBadge-badge {
+    top: 8px !important;
+    right: 8px !important;
+    font-size: 0.75rem;
+    padding: 0 4px;
+    background-color: #ff4444;
+    color: white;
+}
+
 /* Media Query for Small Screens */
 @media (max-width: 768px) {
     .Navbar {
