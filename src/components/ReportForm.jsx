@@ -289,10 +289,21 @@ const Report = ({ pin, onCancel, onClose}) => {
                         value={report.type}
                         // value={"test"}
                         onChange={handleChange}
-                        // InputProps={{ readOnly: true }}
+                        InputProps={{ readOnly: true }}
                         error={!!errors.type}
                         helperText={errors.type}
                     />
+                     <TextField
+                                margin="dense"
+                                label="Specific Place (Optional)"
+                                type="text"
+                                fullWidth
+                                name="place"
+                                value={report.place}
+                                // value={"test"}
+                                onChange={handleChange}
+                                // InputProps={{ readOnly: true }}
+                            />
                     <input
                         type="file"
                         name="image"
@@ -334,17 +345,19 @@ const Report = ({ pin, onCancel, onClose}) => {
                                 value={report.floor}
                                 // value={"test"}
                                 onChange={handleChange}
+                                InputProps={{ readOnly: true }}
                             />
-                             <TextField
+                             {/* <TextField
                                 margin="dense"
-                                label="Specific Place"
+                                label="Specific Place (Optional)"
                                 type="text"
                                 fullWidth
                                 name="place"
                                 value={report.place}
                                 // value={"test"}
                                 onChange={handleChange}
-                            />
+                                // InputProps={{ readOnly: true }}
+                            /> */}
                             <TextField
                                 margin="dense"
                                 label="Coordinates"
@@ -354,7 +367,7 @@ const Report = ({ pin, onCancel, onClose}) => {
                                 value={report.coordinates}
                                 // value={"test"}
                                 onChange={handleChange}
-                            // InputProps={{ readOnly: true }}
+                            InputProps={{ readOnly: true }}
                             />
                             <TextField
                                 margin="dense"
@@ -365,7 +378,7 @@ const Report = ({ pin, onCancel, onClose}) => {
                                 value={report.pinId}
                                 // value={"test"}
                                 onChange={handleChange}
-                            // InputProps={{ readOnly: true }}
+                            InputProps={{ readOnly: true }}
                             />
                             <TextField
                                 margin="dense"
