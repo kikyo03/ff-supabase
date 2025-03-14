@@ -34,6 +34,7 @@ const Navbar = () => {
     const navigate = useNavigate(); // Initialize navigate
     const [notificationCount, setNotificationCount] = useState(0);
 
+
     useEffect(() => {
         const fetchUserInfo = async () => {
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -61,6 +62,8 @@ const Navbar = () => {
         };
         fetchUserInfo();
     }, []);
+
+    
 
 
     const toggleDrawer = (anchor, open) => (event) => {

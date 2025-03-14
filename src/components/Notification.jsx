@@ -11,10 +11,12 @@
 //   ListItemText, 
 //   ListItemIcon, 
 //   Divider,
-//   Collapse 
+//   Collapse,
+//   CircularProgress,
+//   Button
 // } from "@mui/material";
 // import { styled } from "@mui/system";
-// import { FaCheckCircle, FaTimes, FaBell, FaEnvelope } from "react-icons/fa";
+// import { FaCheckCircle, FaTimes, FaBell, FaEnvelope, FaEye } from "react-icons/fa";
 // import Navbar from '../components/Navbar';
 // import supabase from "../helper/supabaseClient";
 
@@ -62,62 +64,14 @@
 //     }
 //   }, [showBanner]);
 
-//   // useEffect(() => {
-//   //   const fetchUserAndNotifications = async () => {
-//   //     const { data: { user }, error } = await supabase.auth.getUser();
-//   //     if (error || !user) return;
-  
-//   //     // Log the user ID here
-//   //     console.log("Authenticated User ID:", user.id);
-  
-//   //     // Fetch user details
-//   //     const { data: userDetails, error: userError } = await supabase
-//   //       .from('users')
-//   //       .select('fname, lname, role, id')
-//   //       .eq('id', user.id)
-//   //       .single();
-  
-//   //     if (userError) {
-//   //       console.error('Error fetching user details:', userError);
-//   //       return;
-//   //     }
-  
-//   //     // Additional log for user details ID (should match auth user ID)
-//   //     console.log("User Details ID:", userDetails.id);
-  
-//   //     // Update form data
-//   //     setFormData({
-//   //       name: `${userDetails.fname} ${userDetails.lname}`,
-//   //       lastName: userDetails.lname,
-//   //       email: user.email,
-//   //       role: userDetails.role,
-//   //       customUid: userDetails.id,
-//   //     });
-
-//   //     // Fetch notifications
-//   //     const { data: notificationsData, error: notificationsError } = await supabase
-//   //       .from('notifications')
-//   //       .select('*')
-//   //       .eq('user_id', user.id)
-//   //       .order('created_at', { ascending: false });
-
-//   //     if (!notificationsError) {
-//   //       setNotifications(notificationsData);
-//   //     }
-//   //   };
-
-//   //   fetchUserAndNotifications();
-//   // }, []);
-
 //   useEffect(() => {
 //     const fetchUserAndNotifications = async () => {
 //       try {
-//         setLoading(true); // Start loading
+//         setLoading(true);
         
 //         const { data: { user }, error } = await supabase.auth.getUser();
 //         if (error || !user) return;
 
-//         // Fetch user details
 //         const { data: userDetails, error: userError } = await supabase
 //           .from('users')
 //           .select('fname, lname, role, id')
@@ -134,7 +88,6 @@
 //           customUid: userDetails.id,
 //         });
 
-//         // Fetch notifications
 //         const { data: notificationsData, error: notificationsError } = await supabase
 //           .from('notifications')
 //           .select('*')
@@ -147,7 +100,7 @@
 //       } catch (error) {
 //         console.error("Fetch error:", error);
 //       } finally {
-//         setLoading(false); // End loading regardless of success/error
+//         setLoading(false);
 //       }
 //     };
 
@@ -191,43 +144,61 @@
 //     }
 //   };
 
+//   const markAllAsRead = async () => {
+//     const { data: { user }, error: authError } = await supabase.auth.getUser();
+//     if (authError || !user) return;
+
+//     const { error } = await supabase
+//       .from('notifications')
+//       .update({ read: true })
+//       .eq('user_id', user.id)
+//       .eq('read', false);
+
+//     if (!error) {
+//       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+//     }
+//   };
+
 //   const handleCloseBanner = () => {
 //     setShowBanner(false);
 //     setLatestNotification(null);
 //   };
 
-//   if (loading) {
-//     return <div>
-//         <Box sx={{ display: 'flex' }}>
-//             <CircularProgress size="4rem" />
-//         </Box>
-//     </div>;
-// }
+//   const unreadCount = notifications.filter(n => !n.read).length;
 
 
 //   return (
 //     <Box>
-//       <Navbar userDetails={formData} />
+//       <Navbar userDetails={formData} notificationCount={unreadCount}/>
 
 //       <Collapse in={showBanner && !!latestNotification}>
-//           <Alert
-//             severity="info"
-//             action={
-//               <IconButton
-//                 aria-label="close"
-//                 color="inherit"
-//                 size="small"
-//                 onClick={handleCloseBanner}
-//               >
-//                 <FaTimes fontSize="inherit" />
-//               </IconButton>
-//             }
-//             sx={{ mt: 2, mb: 2 }}
-//           >
-//             {latestNotification?.message}
-//           </Alert>
-//         </Collapse>
-//         {!loading && notifications.length === 0 ? (
+//         <Alert
+//           severity="info"
+//           action={
+//             <IconButton
+//               aria-label="close"
+//               color="inherit"
+//               size="small"
+//               onClick={handleCloseBanner}
+//             >
+//               <FaTimes fontSize="inherit" />
+//             </IconButton>
+//           }
+//           sx={{ mt: 2, mb: 2 }}
+//         >
+//           {latestNotification?.message}
+//         </Alert>
+//       </Collapse>
+
+//       {loading ? (
+//         <Box sx={{ 
+//           display: 'flex', 
+//           justifyContent: 'center', 
+//           mt: 4 
+//         }}>
+//           <CircularProgress size="4rem" />
+//         </Box>
+//       ) : notifications.length === 0 ? (
 //         <Box sx={{ 
 //           display: 'flex', 
 //           justifyContent: 'center', 
@@ -236,50 +207,66 @@
 //           <Typography variant="h6">No notifications found</Typography>
 //         </Box>
 //       ) : (
-      
-//       <NotificationContainer maxWidth="md">
-//         <Typography variant="h4" component="h1" sx={{ mb: 4, display: "flex", alignItems: "center" }}>
-//           <FaBell style={{ marginRight: "12px" }} />
-//           Notifications
-//         </Typography>
-
- 
-
-//         <List>
-//           {notifications.map((notification) => (
-//             <React.Fragment key={notification.id}>
-//               <NotificationItem elevation={1}>
-//                 <ListItem>
-//                   <ListItemIcon>
-//                     {notification.type === 'status_update' ? (
-//                       <FaCheckCircle color="#4caf50" />
-//                     ) : (
-//                       <FaEnvelope color="#2196f3" />
-//                     )}
-//                   </ListItemIcon>
-//                   <ListItemText
-//                     primary={notification.type === 'status_update' ? 'Status Update' : 'New Message'}
-//                     secondary={notification.message}
-//                   />
-//                   <IconButton 
-//                     edge="end" 
-//                     aria-label="mark as read"
-//                     onClick={() => markAsRead(notification.id)}
-//                   >
-//                     <FaTimes />
-//                   </IconButton>
-//                 </ListItem>
-//               </NotificationItem>
-//               <Divider sx={{ my: 1 }} />
-//             </React.Fragment>
-//           ))}
-//         </List>
-//       </NotificationContainer>
-//     )}
+//         <NotificationContainer maxWidth="md">
+//           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+//             <Typography variant="h4" component="h1" sx={{ display: "flex", alignItems: "center" }}>
+//               <FaBell style={{ marginRight: "12px" }} />
+//               Notifications
+//             </Typography>
+//             <Button 
+//               variant="contained" 
+//               onClick={markAllAsRead}
+//               disabled={unreadCount === 0}
+//             >
+//               Mark All as Read
+//             </Button>
+//           </Box>
+//           <List>
+//   {notifications.map((notification) => (
+//     <React.Fragment key={notification.id}>
+//       <NotificationItem elevation={1}>
+//         <ListItem>
+//           <ListItemIcon>
+//             {notification.type === 'status_update' ? (
+//               notification.message.toLowerCase().includes('denied') ? (
+//                 <FaTimes color="#ff4444" style={{ fontSize: '1.5rem' }} />
+//               ) : (
+//                 <FaCheckCircle color="#4caf50" style={{ fontSize: '1.5rem' }} />
+//               )
+//             ) : (
+//               <FaEnvelope color="#2196f3" style={{ fontSize: '1.5rem' }} />
+//             )}
+//           </ListItemIcon>
+//           <ListItemText
+//             primary={notification.type === 'status_update' ? 'Status Update' : 'New Message'}
+//             secondary={notification.message}
+//             sx={{ 
+//               opacity: notification.read ? 0.6 : 1,
+//               transition: 'opacity 0.3s ease'
+//             }}
+//           />
+//           <IconButton 
+//             edge="end" 
+//             aria-label="mark as read"
+//             onClick={() => markAsRead(notification.id)}
+//           >
+//             {notification.read ? (
+//               <FaCheckCircle color="#4caf50" />
+//             ) : (
+//               <FaEye color="#666" />
+//             )}
+//           </IconButton>
+//         </ListItem>
+//       </NotificationItem>
+//       <Divider sx={{ my: 1 }} />
+//     </React.Fragment>
+//   ))}
+// </List>
+//         </NotificationContainer>
+//       )}
 //     </Box>
 //   );
 // };
-
 
 // export default NotificationPage;
 
@@ -297,10 +284,15 @@ import {
   ListItemIcon, 
   Divider,
   Collapse,
-  CircularProgress // Added missing import
+  CircularProgress,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { FaCheckCircle, FaTimes, FaBell, FaEnvelope } from "react-icons/fa";
+import { FaCheckCircle, FaTimes, FaBell, FaEnvelope, FaEye } from "react-icons/fa";
 import Navbar from '../components/Navbar';
 import supabase from "../helper/supabaseClient";
 
@@ -340,6 +332,7 @@ const NotificationPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [latestNotification, setLatestNotification] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   useEffect(() => {
     if (showBanner) {
@@ -428,14 +421,75 @@ const NotificationPage = () => {
     }
   };
 
+  const markAllAsRead = async () => {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', user.id)
+      .eq('read', false);
+
+    if (!error) {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (!error) {
+        setNotifications([]);
+      }
+      setShowClearConfirmation(false);
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+    }
+  };
+
   const handleCloseBanner = () => {
     setShowBanner(false);
     setLatestNotification(null);
   };
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const ClearConfirmationDialog = () => (
+    <Dialog
+      open={showClearConfirmation}
+      onClose={() => setShowClearConfirmation(false)}
+    >
+      <DialogTitle>Confirm Clear All Notifications</DialogTitle>
+      <DialogContent>
+        <Typography>
+          Are you sure you want to permanently delete all notifications? 
+          This action cannot be undone.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setShowClearConfirmation(false)}>Cancel</Button>
+        <Button 
+          onClick={clearAllNotifications} 
+          color="error"
+          variant="contained"
+        >
+          Confirm Delete All
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Box>
-      <Navbar userDetails={formData} />
+      <Navbar userDetails={formData} notificationCount={unreadCount}/>
 
       <Collapse in={showBanner && !!latestNotification}>
         <Alert
@@ -474,10 +528,35 @@ const NotificationPage = () => {
         </Box>
       ) : (
         <NotificationContainer maxWidth="md">
-          <Typography variant="h4" component="h1" sx={{ mb: 4, display: "flex", alignItems: "center" }}>
-            <FaBell style={{ marginRight: "12px" }} />
-            Notifications
-          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 4,
+            gap: 2 
+          }}>
+            <Typography variant="h4" component="h1" sx={{ display: "flex", alignItems: "center" }}>
+              <FaBell style={{ marginRight: "12px" }} />
+              Notifications
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="contained" 
+                onClick={markAllAsRead}
+                disabled={unreadCount === 0}
+              >
+                Mark All as Read
+              </Button>
+              <Button 
+                variant="contained" 
+                color="error"
+                onClick={() => setShowClearConfirmation(true)}
+                disabled={notifications.length === 0}
+              >
+                Clear All
+              </Button>
+            </Box>
+          </Box>
 
           <List>
             {notifications.map((notification) => (
@@ -486,9 +565,13 @@ const NotificationPage = () => {
                   <ListItem>
                     <ListItemIcon>
                       {notification.type === 'status_update' ? (
-                        <FaCheckCircle color="#4caf50" />
+                        notification.message.toLowerCase().includes('denied') ? (
+                          <FaTimes color="#ff4444" style={{ fontSize: '1.5rem' }} />
+                        ) : (
+                          <FaCheckCircle color="#4caf50" style={{ fontSize: '1.5rem' }} />
+                        )
                       ) : (
-                        <FaEnvelope color="#2196f3" />
+                        <FaEnvelope color="#2196f3" style={{ fontSize: '1.5rem' }} />
                       )}
                     </ListItemIcon>
                     <ListItemText
@@ -504,7 +587,11 @@ const NotificationPage = () => {
                       aria-label="mark as read"
                       onClick={() => markAsRead(notification.id)}
                     >
-                      <FaTimes />
+                      {notification.read ? (
+                        <FaCheckCircle color="#4caf50" />
+                      ) : (
+                        <FaEye color="#666" />
+                      )}
                     </IconButton>
                   </ListItem>
                 </NotificationItem>
@@ -514,6 +601,7 @@ const NotificationPage = () => {
           </List>
         </NotificationContainer>
       )}
+      <ClearConfirmationDialog />
     </Box>
   );
 };

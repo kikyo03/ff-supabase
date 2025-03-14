@@ -112,42 +112,6 @@ const History = () => {
         }
     };
     
-
-
-
-    // const handleDeleteReport = async (id) => {
-    //     try {
-    //         const { error } = await supabase
-    //             .from('reports')
-    //             .delete()
-    //             .eq('id', id);
-
-    //         if (error) throw error;
-
-    //         setReports((prevReports) => prevReports.filter(report => report.id !== id));
-    //     } catch (error) {
-    //         console.error("Error deleting report:", error);
-    //     }
-    // };
-
-    // const handleDeleteReport = async (id) => {
-    //     const confirmDelete = window.confirm("Are you sure you want to delete this report?");
-        
-    //     if (!confirmDelete) return;
-    
-    //     try {
-    //         const { error } = await supabase
-    //             .from('reports')
-    //             .delete()
-    //             .eq('id', id);
-    
-    //         if (error) throw error;
-    
-    //         setReports((prevReports) => prevReports.filter(report => report.id !== id));
-    //     } catch (error) {
-    //         console.error("Error deleting report:", error);
-    //     }
-    // };
     const handleDeleteReport = async (id) => {
         if (!window.confirm("Are you sure you want to delete this report?")) return;
     
@@ -247,52 +211,121 @@ const History = () => {
 //     }
 // };
 
+// const handleDeleteAllReports = async () => {
+//     if (!window.confirm("Are you sure you want to delete ALL reports? This action cannot be undone.")) return;
+
+//     try {
+//         // Fetch all reports to get their pin IDs and report IDs
+//         const { data: allReports, error: fetchError } = await supabase
+//             .from('reports')
+//             .select('id, pinid');
+
+//         if (fetchError) throw fetchError;
+
+//         // Collect unique pin IDs (excluding nulls)
+//         const pinIds = [...new Set(allReports.map(report => report.pinid).filter(Boolean))];
+
+//         // Delete associated pins in one batch
+//         if (pinIds.length > 0) {
+//             const { error: deletePinsError } = await supabase
+//                 .from('pins')
+//                 .delete()
+//                 .in('pinid', pinIds);
+
+//             if (deletePinsError) throw deletePinsError;
+//         }
+
+//         // Collect all report IDs
+//         const reportIds = allReports.map(report => report.id);
+
+//         // Delete all reports in one batch
+//         if (reportIds.length > 0) {
+//             const { error: deleteReportsError } = await supabase
+//                 .from('reports')
+//                 .delete()
+//                 .in('id', reportIds);
+
+//             if (deleteReportsError) throw deleteReportsError;
+//         }
+
+//         // Clear reports from state
+//         setReports([]);
+//         alert('All reports and associated pins have been deleted successfully!');
+
+//     } catch (error) {
+//         console.error("Failed to delete all reports:", error);
+//         alert(`Deletion failed: ${error.message}`);
+//     }
+// };
+
 const handleDeleteAllReports = async () => {
-    if (!window.confirm("Are you sure you want to delete ALL reports? This action cannot be undone.")) return;
-
     try {
-        // Fetch all reports to get their pin IDs and report IDs
-        const { data: allReports, error: fetchError } = await supabase
-            .from('reports')
-            .select('id, pinid');
+        // Get current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw new Error("Authentication required");
 
+        // Determine user role
+        const isAdmin = formData.role === 'admin';
+
+        // Confirmation message based on role
+        const confirmMessage = isAdmin 
+            ? "WARNING: This will delete ALL reports for ALL users! Are you sure?"
+            : "Are you sure you want to delete all YOUR reports? This cannot be undone.";
+
+        if (!window.confirm(confirmMessage)) return;
+
+        // Base query for reports
+        let reportsQuery = supabase
+            .from('reports')
+            .select('id, pinid, user_uid');
+
+        // Add user filter for non-admins
+        if (!isAdmin) {
+            reportsQuery = reportsQuery.eq('user_uid', user.id);
+        }
+
+        // Fetch relevant reports
+        const { data: allReports, error: fetchError } = await reportsQuery;
         if (fetchError) throw fetchError;
 
-        // Collect unique pin IDs (excluding nulls)
-        const pinIds = [...new Set(allReports.map(report => report.pinid).filter(Boolean))];
+        // Exit if no reports found
+        if (!allReports || allReports.length === 0) {
+            alert(isAdmin ? "No reports to delete" : "You have no reports to delete");
+            return;
+        }
 
-        // Delete associated pins in one batch
+        // Process deletions
+        const pinIds = [...new Set(allReports.map(report => report.pinid).filter(Boolean))]; // Fixed here
+        
+        // Delete associated pins
         if (pinIds.length > 0) {
             const { error: deletePinsError } = await supabase
                 .from('pins')
                 .delete()
                 .in('pinid', pinIds);
-
             if (deletePinsError) throw deletePinsError;
         }
 
-        // Collect all report IDs
+        // Delete reports
         const reportIds = allReports.map(report => report.id);
+        const { error: deleteReportsError } = await supabase
+            .from('reports')
+            .delete()
+            .in('id', reportIds);
+        if (deleteReportsError) throw deleteReportsError;
 
-        // Delete all reports in one batch
-        if (reportIds.length > 0) {
-            const { error: deleteReportsError } = await supabase
-                .from('reports')
-                .delete()
-                .in('id', reportIds);
-
-            if (deleteReportsError) throw deleteReportsError;
-        }
-
-        // Clear reports from state
+        // Update state and UI
         setReports([]);
-        alert('All reports and associated pins have been deleted successfully!');
+        alert(isAdmin 
+            ? `Deleted ${reportIds.length} reports and ${pinIds.length} pins successfully!`
+            : "Your reports have been deleted successfully");
 
     } catch (error) {
-        console.error("Failed to delete all reports:", error);
-        alert(`Deletion failed: ${error.message}`);
+        console.error("Deletion failed:", error);
+        alert(`Error: ${error.message}`);
     }
 };
+
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -311,24 +344,38 @@ const handleDeleteAllReports = async () => {
         Report History
     </Typography>
     
-    {formData.role === 'admin' && (
+    {/* {formData.role === 'admin' && (
         <Button
-            variant="contained"
-            color="error"
-            startIcon={isDeletingAll ? <CircularProgress size={20} color="inherit" /> : <FaRadiation />}
-            onClick={handleDeleteAllReports}
-            disabled={isDeletingAll || reports.length === 0}
-            sx={{
-                minWidth: 200,
-                backgroundColor: '#ff4444',
-                '&:hover': {
-                    backgroundColor: '#cc0000'
-                }
-            }}
-        >
-            {isDeletingAll ? 'Nuking Data...' : 'Delete All Reports'}
-        </Button>
+    variant="contained"
+    color="error"
+    startIcon={isDeletingAll ? <CircularProgress size={20} color="inherit" /> : <FaRadiation />}
+    onClick={handleDeleteAllReports}
+    disabled={isDeletingAll || reports.length === 0}
+    sx={{
+        minWidth: 200,
+        backgroundColor: '#ff4444',
+        '&:hover': {
+            backgroundColor: '#cc0000'
+        }
+    }} */}
+    <Button
+    variant="contained"
+    color="error"
+    startIcon={isDeletingAll ? <CircularProgress size={20} color="inherit" /> : <FaRadiation />}
+    onClick={handleDeleteAllReports}
+    disabled={isDeletingAll || reports.length === 0}
+    sx={{
+        minWidth: 200,
+        backgroundColor: '#ff4444',
+        '&:hover': {
+            backgroundColor: '#cc0000'
+        }
+    }}
+>
+    {isDeletingAll ? 'Deleting...' : (
+        formData.role === 'admin' ? 'Delete All Reports' : 'Delete My Reports'
     )}
+</Button>
 </Box>
             
 

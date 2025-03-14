@@ -27,6 +27,8 @@
     "react-router-dom": "^6.14.1",
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.2",
+    "resend": "^4.1.2",
+    "supabase": "^2.19.7",
     "typeface-poppins": "^1.1.13"
   },
   "devDependencies": {
