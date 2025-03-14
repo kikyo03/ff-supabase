@@ -10,7 +10,8 @@ import {
     Paper,
     Snackbar,
     Alert,
-    CircularProgress
+    CircularProgress,
+    MenuItem
 } from "@mui/material";
 import { styled } from "@mui/system";
 import supabase from "../helper/supabaseClient";
@@ -37,7 +38,8 @@ const AuthForm = () => {
         fname: "", 
         lname: "", 
         email: "", 
-        password: "" 
+        password: "",
+        role: "" 
     });
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -59,6 +61,7 @@ const AuthForm = () => {
         if (isSignUp) {
             if (!formData.fname.trim()) newErrors.fname = "First name is required";
             if (!formData.lname.trim()) newErrors.lname = "Last name is required";
+            if (!formData.role) newErrors.role = "Role is required";
         }
         if (!formData.email.trim()) {
             newErrors.email = "Email is required";
@@ -91,6 +94,7 @@ const AuthForm = () => {
                         email: formData.email,
                         fname: formData.fname,
                         lname: formData.lname,
+                        role: formData.role
                     }]);
 
                 if (insertError) throw insertError;
@@ -130,67 +134,100 @@ const AuthForm = () => {
     return (
         <Container maxWidth="sm">
             <StyledPaper elevation={3}>
-            <Typography variant="h4" align="center" gutterBottom>
-  {isSignUp ? "Sign Up" : "Login"}
+                <Typography variant="h4" align="center" gutterBottom>
+                    {isSignUp ? "Sign Up" : "Login"}
                 </Typography>
 
-             <Box mt={3} />
+                <Box mt={3} />
 
-           <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
-                      {isSignUp && (
-                            <Grid item xs={12}>
-                                <Box display="flex" alignItems="center">
-                                    <IconWrapper>
-                                        <FaUser />
-                                    </IconWrapper>
-                                    <TextField
-                                        fullWidth
-                                        label="First Name"
-                                        name="fname"
-                                        value={formData.fname}
-                                        onChange={handleInputChange}
-                                        error={Boolean(errors.fname)}
-                                        helperText={errors.fname}
-                                        required
-                                        sx={{
-                                            "& label": {
-                                                backgroundColor: "transparent",
-                                                padding: "0px 5px",
-                                            },
-                                            "& label.Mui-focused": {
-                                                backgroundColor: "transparent",
-                                            },
-                                        }}
-                                    />         
-                                </Box>
-                                <Box mt={2} />
+                        {isSignUp && (
+                            <>
+                                <Grid item xs={12}>
+                                    <Box display="flex" alignItems="center">
+                                        <IconWrapper>
+                                            <FaUser />
+                                        </IconWrapper>
+                                        <TextField
+                                            fullWidth
+                                            label="First Name"
+                                            name="fname"
+                                            value={formData.fname}
+                                            onChange={handleInputChange}
+                                            error={Boolean(errors.fname)}
+                                            helperText={errors.fname}
+                                            required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0px 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+                                            }}
+                                        />         
+                                    </Box>
+                                    <Box mt={2} />
 
-                                <Box display="flex" alignItems="center">
-                                    <IconWrapper>
-                                        <FaUser />
-                                    </IconWrapper>
-                                    <TextField
-                                        fullWidth
-                                        label="Last Name"
-                                        name="lname"
-                                        value={formData.lname}
-                                        onChange={handleInputChange}
-                                        error={Boolean(errors.lname)}
-                                        helperText={errors.lname}
-                                        required
-                                        sx={{
-                                            "& label": {
-                                                backgroundColor: "transparent",
-                                                padding: "0 5px",
-                                            },
-                                            "& label.Mui-focused": {
-                                                backgroundColor: "transparent",
-                                            },
-                                        }}
-                                    />         
-                                </Box>
-                            </Grid>
+                                    <Box display="flex" alignItems="center">
+                                        <IconWrapper>
+                                            <FaUser />
+                                        </IconWrapper>
+                                        <TextField
+                                            fullWidth
+                                            label="Last Name"
+                                            name="lname"
+                                            value={formData.lname}
+                                            onChange={handleInputChange}
+                                            error={Boolean(errors.lname)}
+                                            helperText={errors.lname}
+                                            required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+                                            }}
+                                        />         
+                                    </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12}>
+                                    <Box display="flex" alignItems="center">
+                                        <IconWrapper>
+                                            <FaUser />
+                                        </IconWrapper>
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            label="Role"
+                                            name="role"
+                                            value={formData.role}
+                                            onChange={handleInputChange}
+                                            error={Boolean(errors.role)}
+                                            helperText={errors.role}
+                                            required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+                                            }}
+                                        >
+                                            <MenuItem value="Student">Student</MenuItem>
+                                            <MenuItem value="Faculty">Faculty</MenuItem>
+                                        </TextField>
+                                    </Box>
+                                </Grid>
+                            </>
                         )}
                         <Grid item xs={12}>
                             <Box display="flex" alignItems="center">

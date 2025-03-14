@@ -17,7 +17,7 @@ import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 import Report from './ReportForm'; // Import the ReportForm component
 
 // Import icons
-import CautionIcon from '../assets/images/Caution_shadow.png';
+import CautionIcon from '../assets/images/Caution_noshadow.png';
 import CautionHoverIcon from '../assets/images/Caution_symbol.png';
 import CleaningIcon from '../assets/images/Cleaning_shadow.png';
 import CleaningHoverIcon from '../assets/images/Cleaning_symbol.png';
