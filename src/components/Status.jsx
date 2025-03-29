@@ -151,6 +151,8 @@ const ReportStatus = () => {
         }
     }, [reportData]);
 
+    
+
     const handleMarkAsDone = async () => {
         try {
             const { error } = await supabase
@@ -193,6 +195,40 @@ const ReportStatus = () => {
     }, [pinId]);
 
     useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                // Fetch the current authenticated user
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) throw error;
+
+                if (user) {
+                    setUserId(user.id); // Set userId from Supabase
+                    // Fetch additional user data (fname, lname) from your users table
+                    const { data, error: fetchError } = await supabase
+                        .from("users")
+                        .select('fname, lname, id')
+                        .eq("id", user.id)
+                        .single();
+
+                    if (fetchError) throw fetchError;
+
+                    setUserData({
+                        fname: data.fname,
+                        lname: data.lname,
+                        customUid: data.id, // This is the Supabase `user.id`
+                    });
+                } else {
+                    console.error("No authenticated user found. Please log in.");
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error.message);
+            }
+        };
+        fetchUser();
+    }, []);
+
+
+    useEffect(() => {
         const fetchUserRole = async () => {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (user) {
@@ -225,30 +261,90 @@ const ReportStatus = () => {
         }
     };
       
+    // const handleAccept = async () => {
+    //     try {
+    //         const { error: reportError } = await supabase
+    //             .from('reports')
+    //             .update({ status: 'In Progress' })
+    //             .eq('pinid', pinId);
+            
+    //         if (reportError) throw reportError;
+
+    //         const { error: pinError } = await supabase
+    //             .from('pins')
+    //             .update({ status: 'In Progress' })
+    //             .eq('pinid', pinId);
+            
+    //         if (pinError) throw pinError;
+
+    //         setReportData(prev => ({ ...prev, status: 'In Progress' }));
+    //         alert('Report Accepted!');
+    //         await sendNotification(`Your ${reportData.type} Report at ${reportData.specific_place} has been accepted and is now in progress!`);
+    //     } catch (err) {
+    //         setError(err.message);
+    //     }
+    // };
+
     const handleAccept = async () => {
         try {
+            // Get current user's details
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError) throw authError;
+            if (!user) throw new Error('No authenticated user found');
+            
+            // Fetch user's full name from public.users table
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('fname, lname')
+                .eq('id', user.id)
+                .single();
+    
+            if (userError) throw userError;
+            if (!userData) throw new Error('User details not found');
+    
+            // Combine first and last name
+            const adminName = `${userData.fname} ${userData.lname}`.trim();
+            
+            // Update report with admin name
             const { error: reportError } = await supabase
                 .from('reports')
-                .update({ status: 'In Progress' })
+                .update({ 
+                    status: 'In Progress',
+                    accepted_by: adminName 
+                })
                 .eq('pinid', pinId);
             
             if (reportError) throw reportError;
-
+    
+            // Update pin status
             const { error: pinError } = await supabase
                 .from('pins')
-                .update({ status: 'In Progress' })
+                .update({ 
+                    status: 'In Progress',
+                    accepted_by: adminName
+                })
                 .eq('pinid', pinId);
             
             if (pinError) throw pinError;
-
-            setReportData(prev => ({ ...prev, status: 'In Progress' }));
+    
+            // Update local state
+            setReportData(prev => ({ 
+                ...prev, 
+                status: 'In Progress',
+                accepted_by: adminName
+            }));
+            
             alert('Report Accepted!');
-            await sendNotification(`Your ${reportData.type} Report at ${reportData.specific_place} has been accepted and is now in progress!`);
+            await sendNotification(
+                `Your ${reportData.type} Report at ${reportData.specific_place} ` +
+                `has been accepted by ${adminName} and is now in progress!`
+            );
         } catch (err) {
+            console.error('Error accepting report:', err);
             setError(err.message);
+            alert(`Failed to accept report: ${err.message}`);
         }
     };
-
     const handleDeny = async (reason) => {
         setIsProcessing(true);
         try {
@@ -351,31 +447,35 @@ const ReportStatus = () => {
                         <DetailLabel>Place:</DetailLabel>
                         <DetailValue>{reportData.specific_place}</DetailValue>
                     </DetailItem>
+                    <DetailItem style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <DetailLabel>Accepted By:</DetailLabel>
+                        <DetailValue>{reportData.accepted_by}</DetailValue>
+                    </DetailItem>
                     <Box textAlign="center">
-                        {userRole === 'admin' ? (
-                            <>
-                                {reportData.status === "Pending" && (
-                                    <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
-                                        <ActionButton 
-                                            onClick={handleAccept} 
-                                            startIcon={<CheckCircleRoundedIcon />}
-                                        >
-                                            Accept
-                                        </ActionButton>
-                                        <ActionButton 
-                                            onClick={() => setShowDenyReasonModal(true)}
-                                            startIcon={<CancelRoundedIcon />}
-                                        >
-                                            Deny
-                                        </ActionButton>
-                                        <ActionButton 
-                                            onClick={() => navigate("/dashboard")}
-                                            startIcon={<FaMapMarkerAlt />}
-                                        >
-                                            Go to map
-                                        </ActionButton>
-                                    </Box>
-                                )}
+                    {!['student', 'faculty'].includes(userRole?.toLowerCase()) ? (
+  <>
+    {reportData.status === "Pending" && (
+      <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+        <ActionButton 
+          onClick={handleAccept} 
+          startIcon={<CheckCircleRoundedIcon />}
+        >
+          Accept
+        </ActionButton>
+        <ActionButton 
+          onClick={() => setShowDenyReasonModal(true)}
+          startIcon={<CancelRoundedIcon />}
+        >
+          Deny
+        </ActionButton>
+        <ActionButton 
+          onClick={() => navigate("/dashboard")}
+          startIcon={<FaMapMarkerAlt />}
+        >
+          Go to map
+        </ActionButton>
+      </Box>
+    )}
                                  {reportData.status === "In Progress" && (
                 <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
                     <ActionButton 

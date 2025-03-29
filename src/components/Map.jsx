@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { areas1, areas2 } from "../helper/areas";
 import supabase from "../helper/supabaseClient";
 // import CircularProgress from "@mui/material/CircularProgress";
@@ -126,15 +126,24 @@ const FloorMap = () => {
     const [selectedAreaLabel, setSelectedAreaLabel] = useState('');
     const [showNotification, setShowNotification] = useState(false);
     const [latestNotification, setLatestNotification] = useState(null);
-    
-    
-
-
+    const userRoleRef = useRef(''); // Add ref for user role
+    const userRef = useRef(null); // Add ref for user
     const floor1Count = pins.filter(pin => pin.floor === "1").length;
     const floor2Count = pins.filter(pin => pin.floor === "2").length;
-    
-
     const navigate = useNavigate();
+
+    useEffect(() => {
+        userRoleRef.current = userRole;
+    }, [userRole]);
+
+    useEffect(() => {
+        const updateUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            userRef.current = user;
+        };
+        updateUser();
+    }, []);
+
 
     const toggleFloor = () => {
         setLoadingAction(true);
@@ -152,46 +161,23 @@ const FloorMap = () => {
         }, 500);
     };
 
-    // const handleAreaClick = (event, area) => {
-    //     console.log(area.label); // Access label directly from area object
-    //     // Check pin limit before proceeding
-    //     if (pins.length >= 5) {
-    //         alert("Maximum limit of 5 pins reached. Please delete existing pins to create new ones.");
-    //         return;
-    //     }
-    
-    //     const svg = event.currentTarget.ownerSVGElement;
-    //     const point = svg.createSVGPoint();
-    //     point.x = event.clientX;
-    //     point.y = event.clientY;
-    //     const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse());
-    
-    //     setSelectedPosition({ x, y });
-    //     setSelectedAreaLabel(area.label); // Store the area label in state
-    //     setShowPinModal(true);
-    // };
-
     const handleAreaClick = (event, area) => {
-        // console.log(area.label);
-        
-        // Prevent admins from creating pins
-        if (userRole === 'admin') {
-            alert("Admins cannot create pins.");
+        if (!['student', 'faculty'].includes(userRole)) {
+            alert("Only Students and Faculty can create pins.");
             return;
         }
-    
-        // Check pin limit before proceeding
+
         if (pins.length >= 5) {
-            alert("Maximum limit of 5 pins reached. Please delete existing pins to create new ones.");
+            alert("Maximum limit of 5 pins reached.");
             return;
         }
-    
+
         const svg = event.currentTarget.ownerSVGElement;
         const point = svg.createSVGPoint();
         point.x = event.clientX;
         point.y = event.clientY;
         const { x, y } = point.matrixTransform(svg.getScreenCTM().inverse());
-    
+
         setSelectedPosition({ x, y });
         setSelectedAreaLabel(area.label);
         setShowPinModal(true);
@@ -286,36 +272,6 @@ const FloorMap = () => {
         }
     };
 
-    // useEffect(() => {
-    //     const channel = supabase
-    //         .channel('pins')
-    //         .on('postgres_changes', {
-    //             event: '*',
-    //             schema: 'public',
-    //             table: 'pins'
-    //         }, (payload) => {
-    //             if (payload.eventType === 'INSERT') {
-    //                 setPins(prev => [...prev, {
-    //                     ...payload.new,
-    //                     coordinates: JSON.parse(payload.new.coordinates)
-    //                 }]);
-    //             } else if (payload.eventType === 'UPDATE') {
-    //                 setPins(prev => prev.map(pin => 
-    //                     pin.pinid === payload.new.pinid ? {
-    //                         ...payload.new,
-    //                         coordinates: JSON.parse(payload.new.coordinates)
-    //                     } : pin
-    //                 ));
-    //             } else if (payload.eventType === 'DELETE') {
-    //                 setPins(prev => prev.filter(pin => pin.pinid !== payload.old.pinid));
-    //             }
-    //         })
-    //         .subscribe();
-    
-    //     return () => {
-    //         supabase.removeChannel(channel);
-    //     };
-    // }, []);
 
     useEffect(() => {
         // Realtime subscription for ALL pin changes
@@ -354,170 +310,145 @@ const FloorMap = () => {
       }, []); // No dependencies - runs once
 
    
-    // Inside the useEffect for fetching user role
 useEffect(() => {
     const fetchUserRole = async () => {
         const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) return;
 
-        if (error) {
-            console.error('Error fetching user:', error);
-            return;
-        }
+        const { data: userDetails } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-        if (user) {
-            const { data: userDetails, error: userError } = await supabase
-                .from('users')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-
-            if (userError) {
-                console.error('Error fetching user role:', userError);
-            } else {
-                console.log('User Role:', userDetails?.role);
-                setUserRole(userDetails?.role || ''); // Add this line to set the role in state
-            }
+        if (userDetails) {
+            // Trim whitespace and normalize case
+            const role = userDetails.role?.trim().toLowerCase();
+            setUserRole(role || '');
         }
     };
     fetchUserRole();
 }, []);
 
 
-// useEffect(() => {
-//     const fetchPins = async () => {
-//         try {
-//             setIsLoading(true);
-//             const { data: { user } } = await supabase.auth.getUser();
-            
-//             // Create base query with status filter
-//             let query = supabase
-//                 .from('pins')
-//                 .select('*')
-
-//             // Add user filter for non-admin users
-//             if (userRole !== 'admin') {
-//                 query = query.eq('user_uid', user.id);
-//             }
-
-//             // Execute query
-//             const { data, error } = await query;
-
-//             if (error) throw error;
-            
-//             // Parse coordinates
-//             const parsedPins = data.map((pin) => ({
-//                 ...pin,
-//                 coordinates: pin.coordinates ? JSON.parse(pin.coordinates) : { x: 0, y: 0 }
-//             }));
-
-//             setPins(parsedPins);
-//         } catch (err) {
-//             console.error("Error fetching pins:", err.message);
-//         } finally {
-//             setIsLoading(false);
-//         }
-//     };
-
 useEffect(() => {
     const fetchPins = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-  
-        // Base query
-        let query = supabase.from('pins').select('*');
-  
-        // Filter for non-admins
-        if (userRole !== 'admin') {
-          query = query.eq('user_uid', user.id);
+        try {
+            setIsLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            // First, log all existing pin types
+            const { data: allPins, error: allPinsError } = await supabase
+                .from('pins')
+                .select('type');
+            
+            console.log('[DEBUG] All existing pin types:', 
+                allPins ? [...new Set(allPins.map(pin => pin.type))] : 'No pins found'
+            );
+
+            let query = supabase.from('pins').select('*');
+
+            console.log('[DEBUG] Current user role:', userRole);
+            console.log('[DEBUG] Authenticated user:', user);
+
+            if (userRole === 'admin') {
+                console.log('[DEBUG] Fetching all pins for admin');
+            } else if (userRole === 'it admin') {
+                console.log('[DEBUG] Filtering for IT Maintenance pins');
+                query = query.eq('type', 'IT Maintenance');
+            } else {
+                console.log('[DEBUG] Filtering for user pins');
+                query = query.eq('user_uid', user?.id);
+            }
+
+            const { data, error } = await query;
+            console.log('[DEBUG] Query results:', { data, error });
+
+            if (error) throw error;
+
+            const parsedPins = data.map(pin => ({
+                ...pin,
+                coordinates: JSON.parse(pin.coordinates)
+            }));
+
+            console.log('[DEBUG] Parsed pins:', parsedPins);
+            setPins(parsedPins);
+
+        } catch (err) {
+            console.error('[ERROR] Fetch error:', err.message);
+        } finally {
+            setIsLoading(false);
         }
-  
-        const { data, error } = await query;
-        if (error) throw error;
-  
-        const parsedPins = data.map(pin => ({
-          ...pin,
-          coordinates: JSON.parse(pin.coordinates)
-        }));
-  
-        setPins(parsedPins);
-      } catch (err) {
-        console.error("Fetch error:", err.message);
-      } finally {
-        setIsLoading(false);
-      }
     };
-  
-    fetchPins();
-  }, [userRole]); // Refetch when user role changes
 
-    // realtime!
-
-    // Realtime subscription
-//   const channel = supabase
-//   .channel('pins')
-//   .on('postgres_changes', {
-//     event: '*',
-//     schema: 'public',
-//     table: 'pins'
-//   }, (payload) => {
-//     // Handle realtime updates
-//     if (payload.eventType === 'INSERT') {
-//       setPins(prev => [...prev, {
-//         ...payload.new,
-//         coordinates: JSON.parse(payload.new.coordinates)
-//       }]);
-//     } else if (payload.eventType === 'UPDATE') {
-//       setPins(prev => prev.map(pin => 
-//         pin.pinid === payload.new.pinid ? {
-//           ...payload.new,
-//           coordinates: JSON.parse(payload.new.coordinates)
-//         } : pin
-//       ));
-//     } else if (payload.eventType === 'DELETE') {
-//       setPins(prev => prev.filter(pin => pin.pinid !== payload.old.pinid));
-//     }
-//   })
-//   .subscribe();
-
-// fetchPins();
-
-// // Cleanup function
-// return () => {
-//   supabase.removeChannel(channel);
-// };
-    
-//     // fetchPins();
-// }, [userRole]);
-
+    // Only fetch pins if a user role has been determined
+    if (userRole) {
+        fetchPins();
+    }
+}, [userRole]);
 
 useEffect(() => {
     const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        async (payload) => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+        .channel('public:pins')
+        .on('postgres_changes', 
+            {
+                event: '*',
+                schema: 'public',
+                table: 'pins'
+            },
+            (payload) => {
+                const currentRole = userRoleRef.current;
+                const currentUser = userRef.current;
 
-          if (payload.new.user_id === user.id) {
-            setLatestNotification(payload.new);
-            setShowNotification(true);
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-              setShowNotification(false);
-            }, 5000);
-          }
-        }
-      )
-      .subscribe();
+                const processPin = (pin) => ({
+                    ...pin,
+                    coordinates: JSON.parse(pin.coordinates)
+                });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+                let shouldUpdate = false;
+                const pin = payload.new || payload.old;
+
+                // Handle different event types
+                switch (payload.eventType) {
+                    case 'INSERT':
+                        if (currentRole === 'admin') {
+                            shouldUpdate = true;
+                        } else if (currentRole === 'it admin') {
+                            shouldUpdate = pin.type === 'IT Maintenance';
+                        } else {
+                            shouldUpdate = pin.user_uid === currentUser?.id;
+                        }
+                        break;
+                    
+                    case 'UPDATE':
+                    case 'DELETE':
+                        // Always process updates/deletes for existing pins
+                        shouldUpdate = true;
+                        break;
+                }
+
+                if (!shouldUpdate) return;
+
+                // Process the change
+                switch (payload.eventType) {
+                    case 'INSERT':
+                        setPins(prev => [...prev, processPin(payload.new)]);
+                        break;
+                    case 'UPDATE':
+                        setPins(prev => prev.map(p => 
+                            p.pinid === payload.new.pinid ? processPin(payload.new) : p
+                        ));
+                        break;
+                    case 'DELETE':
+                        setPins(prev => prev.filter(p => p.pinid !== payload.old.pinid));
+                        break;
+                }
+            }
+        )
+        .subscribe();
+
+    return () => supabase.removeChannel(channel);
+}, []);
 
     const areasToDisplay = currentFloor === 1 ? areas1 : areas2;
 

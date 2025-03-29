@@ -415,11 +415,6 @@ const Report = ({ pin, onCancel, onClose}) => {
                             />
                         </>
                     )}
-                    {/* {error && (
-                        <p style={{ color: "red", marginTop: "10px" }}>
-                            All fields must be filled out.
-                        </p>
-                    )} */}
                 </DialogContent>
 
                 <DialogActions style={{ backgroundColor: "#1d3557", display: "flex", justifyContent: "space-between", alignItems: "center" }}>

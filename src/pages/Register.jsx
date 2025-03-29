@@ -39,9 +39,11 @@ const AuthForm = () => {
         lname: "", 
         email: "", 
         password: "",
-        role: "" 
+        role: "",
+        username: "" 
     });
     const [isSignUp, setIsSignUp] = useState(false);
+    const [isAdminLogin, setIsAdminLogin] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
@@ -63,8 +65,10 @@ const AuthForm = () => {
             if (!formData.lname.trim()) newErrors.lname = "Last name is required";
             if (!formData.role) newErrors.role = "Role is required";
         }
-        if (!formData.email.trim()) {
-            newErrors.email = "Email is required";
+        if (!isSignUp && isAdminLogin) {
+            if (!formData.username.trim()) newErrors.username = "Username is required";
+        } else if (!isSignUp && !isAdminLogin) {
+            if (!formData.email.trim()) newErrors.email = "Email is required";
         }
         if (!formData.password.trim()) {
             newErrors.password = "Password is required";
@@ -106,18 +110,45 @@ const AuthForm = () => {
                 });
                 setTimeout(() => navigate('/dashboard'), 3000);
             } else {
-                const { error } = await supabase.auth.signInWithPassword({
-                    email: formData.email,
-                    password: formData.password,
-                });
+                if (isAdminLogin) {
+                    // Admin login flow
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .select('email')
+                        .eq('username', formData.username)
+                        .eq('role', 'admin')
+                        .single();
 
-                if (error) throw error;
+                    if (userError) throw userError;
+                    if (!userData) throw new Error('Admin user not found');
 
-                setSnackbar({
-                    open: true,
-                    message: 'Login successful! Redirecting...',
-                    severity: 'success'
-                });
+                    const { error: authError } = await supabase.auth.signInWithPassword({
+                        email: userData.email,
+                        password: formData.password,
+                    });
+
+                    if (authError) throw authError;
+
+                    setSnackbar({
+                        open: true,
+                        message: 'Admin login successful! Redirecting...',
+                        severity: 'success'
+                    });
+                } else {
+                    // Regular login flow
+                    const { error } = await supabase.auth.signInWithPassword({
+                        email: formData.email,
+                        password: formData.password,
+                    });
+
+                    if (error) throw error;
+
+                    setSnackbar({
+                        open: true,
+                        message: 'Login successful! Redirecting...',
+                        severity: 'success'
+                    });
+                }
                 setTimeout(() => navigate('/dashboard'), 3000);
             }
         } catch (error) {
@@ -135,7 +166,7 @@ const AuthForm = () => {
         <Container maxWidth="sm">
             <StyledPaper elevation={3}>
                 <Typography variant="h4" align="center" gutterBottom>
-                    {isSignUp ? "Sign Up" : "Login"}
+                    {isSignUp ? "Sign Up" : (isAdminLogin ? "Admin Login" : "Login")}
                 </Typography>
 
                 <Box mt={3} />
@@ -149,7 +180,10 @@ const AuthForm = () => {
                                         <IconWrapper>
                                             <FaUser />
                                         </IconWrapper>
-                                        <TextField
+                                        <TextField 
+                                            autoFocus
+                                            margin="dense"
+                                            type="text"
                                             fullWidth
                                             label="First Name"
                                             name="fname"
@@ -166,7 +200,8 @@ const AuthForm = () => {
                                                 "& label.Mui-focused": {
                                                     backgroundColor: "transparent",
                                                 },
-                                            }}
+}}
+
                                         />         
                                     </Box>
                                     <Box mt={2} />
@@ -187,15 +222,45 @@ const AuthForm = () => {
                                             sx={{
                                                 "& label": {
                                                     backgroundColor: "transparent",
-                                                    padding: "0 5px",
+                                                    padding: "0px 5px",
                                                 },
                                                 "& label.Mui-focused": {
                                                     backgroundColor: "transparent",
                                                 },
-                                            }}
+}}
+
                                         />         
                                     </Box>
                                 </Grid>
+
+                                <Grid item xs={12}>
+                                <Box display="flex" alignItems="center">
+                                    <IconWrapper>
+                                        <FaEnvelope />
+                                    </IconWrapper>
+                                    <TextField
+                                        fullWidth
+                                        label="Email"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        error={Boolean(errors.email)}
+                                        helperText={errors.email}
+                                        required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0px 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+}}
+
+                                    />
+                                </Box>
+                            </Grid>
                                 
                                 <Grid item xs={12}>
                                     <Box display="flex" alignItems="center">
@@ -215,47 +280,82 @@ const AuthForm = () => {
                                             sx={{
                                                 "& label": {
                                                     backgroundColor: "transparent",
-                                                    padding: "0 5px",
+                                                    padding: "0px 5px",
                                                 },
                                                 "& label.Mui-focused": {
                                                     backgroundColor: "transparent",
                                                 },
-                                            }}
+}}
+
                                         >
                                             <MenuItem value="Student">Student</MenuItem>
                                             <MenuItem value="Faculty">Faculty</MenuItem>
+                                            <MenuItem value="Admin">Admin</MenuItem>
                                         </TextField>
                                     </Box>
                                 </Grid>
                             </>
                         )}
-                        <Grid item xs={12}>
-                            <Box display="flex" alignItems="center">
-                                <IconWrapper>
-                                    <FaEnvelope />
-                                </IconWrapper>
-                                <TextField
-                                    fullWidth
-                                    label="Email"
-                                    name="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    error={Boolean(errors.email)}
-                                    helperText={errors.email}
-                                    required
-                                    sx={{
-                                        "& label": {
-                                            backgroundColor: "transparent",
-                                            padding: "0 5px",
-                                        },
-                                        "& label.Mui-focused": {
-                                            backgroundColor: "transparent",
-                                        },
-                                    }}
-                                />
-                            </Box>
-                        </Grid>
+
+                        {!isSignUp && isAdminLogin ? (
+                            <Grid item xs={12}>
+                                <Box display="flex" alignItems="center">
+                                    <IconWrapper>
+                                        <FaUser />
+                                    </IconWrapper>
+                                    <TextField
+                                        fullWidth
+                                        label="Username"
+                                        name="username"
+                                        value={formData.username}
+                                        onChange={handleInputChange}
+                                        error={Boolean(errors.username)}
+                                        helperText={errors.username}
+                                        required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0px 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+}}
+
+                                    />
+                                </Box>
+                            </Grid>
+                        ) : !isSignUp && (
+                            <Grid item xs={12}>
+                                <Box display="flex" alignItems="center">
+                                    <IconWrapper>
+                                        <FaEnvelope />
+                                    </IconWrapper>
+                                    <TextField
+                                        fullWidth
+                                        label="Email"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        error={Boolean(errors.email)}
+                                        helperText={errors.email}
+                                        required
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0px 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+}}
+
+                                    />
+                                </Box>
+                            </Grid>
+                        )}
+
                         <Grid item xs={12}>
                             <Box display="flex" alignItems="center" width="100%">
                                 <IconWrapper>
@@ -271,29 +371,20 @@ const AuthForm = () => {
                                     error={Boolean(errors.password)}
                                     helperText={errors.password}
                                     required
-                                    sx={{
-                                        "& label": {
-                                            backgroundColor: "transparent",
-                                            padding: "0 5px",
-                                        },
-                                        "& label.Mui-focused": {
-                                            backgroundColor: "transparent",
-                                        },
-                                    }}
+                                            sx={{
+                                                "& label": {
+                                                    backgroundColor: "transparent",
+                                                    padding: "0px 5px",
+                                                },
+                                                "& label.Mui-focused": {
+                                                    backgroundColor: "transparent",
+                                                },
+}}
+
                                     InputProps={{
                                         endAdornment: (
-                                            <Box sx={{ 
-                                                cursor: "pointer", 
-                                                color: "#1D3557", 
-                                                display: "flex", 
-                                                alignItems: "center", 
-                                                marginRight: 1 
-                                            }}>
-                                                {showPassword ? (
-                                                    <FaEyeSlash onClick={() => setShowPassword(!showPassword)} />
-                                                ) : (
-                                                    <FaEye onClick={() => setShowPassword(!showPassword)} />
-                                                )}
+                                            <Box sx={{ cursor: "pointer" }} onClick={() => setShowPassword(!showPassword)}>
+                                                {showPassword ? <FaEyeSlash /> : <FaEye />}
                                             </Box>
                                         ),
                                     }}
@@ -312,23 +403,37 @@ const AuthForm = () => {
                                 padding: "12px 24px",
                                 fontSize: "1.2rem",
                                 minWidth: "180px",
-                                minHeight: "50px",
-                                borderRadius: "8px",
                             }}
                         >
-                            {loading ? <CircularProgress size={24} /> : isSignUp ? "Sign Up" : "Login"}
+                            {loading ? <CircularProgress size={24} /> : 
+                                isSignUp ? "Sign Up" : "Login"}
                         </Button>
 
-                        <Button 
-                            color="secondary" 
-                            onClick={() => setIsSignUp(!isSignUp)}
-                            sx={{ fontSize: "1.1rem", fontWeight: "bold", mt: 2 }}
-                        >
-                            {isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up"}
-                        </Button>
+                        <Box mt={2} display="flex" flexDirection="column" alignItems="center">
+                            <Button 
+                                color="secondary"
+                                onClick={() => setIsSignUp(!isSignUp)}
+                                sx={{ mb: 1 }}
+                            >
+                                {isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up"}
+                            </Button>
+                            
+                            {!isSignUp && (
+                                <Button 
+                                    color="secondary"
+                                    onClick={() => {
+                                        setIsAdminLogin(!isAdminLogin);
+                                        setFormData({...formData, email: "", username: ""});
+                                    }}
+                                >
+                                    {isAdminLogin ? " Student/Faculty Login" : "Admin Login"}
+                                </Button>
+                            )}
+                        </Box>
                     </Box>
                 </form>
             </StyledPaper>
+
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={3000}
@@ -338,7 +443,6 @@ const AuthForm = () => {
                 <Alert 
                     severity={snackbar.severity}
                     onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-                    sx={{ width: '100%' }}
                 >
                     {snackbar.message}
                 </Alert>
