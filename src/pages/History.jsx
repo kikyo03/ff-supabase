@@ -1787,6 +1787,454 @@
 
 // export default History;
 
+// import React, { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import {
+//     Box,
+//     Typography,
+//     Card,
+//     CardContent,
+//     CardMedia,
+//     Button,
+//     Grid,
+//     Container,
+//     Chip,
+//     Select,
+//     MenuItem,
+//     InputLabel,
+//     FormControl,
+//     Modal,
+//     IconButton
+// } from "@mui/material";
+// import { styled } from "@mui/system";
+// import { FaTrash, FaRadiation, FaPrint, FaTimes } from "react-icons/fa";
+// import { useTheme } from '@mui/material/styles';
+// import Navbar from '../components/Navbar';
+// import supabase from "../helper/supabaseClient";
+// import CircularProgress from '@mui/material/CircularProgress';
+// import { pdf } from '@react-pdf/renderer';
+// import { PDFReport, MultiPDFReport } from '../helper/PDFReport';
+
+// const REPORT_PRIORITY = {
+//     'Caution': { level: 'High', order: 1, color: 'error' },
+//     'Electrical': { level: 'High', order: 1, color: 'error' },
+//     'Repair': { level: 'Medium', order: 2, color: 'warning' },
+//     'IT Maintenance': { level: 'Medium', order: 3, color: 'warning' },
+//     'Cleaning': { level: 'Low', order: 4, color: 'info' },
+//     'Request': { level: 'Low', order: 4, color: 'info' }
+// };
+
+// const reportTypes = Object.keys(REPORT_PRIORITY).sort((a, b) => 
+//     REPORT_PRIORITY[a].order - REPORT_PRIORITY[b].order
+// );
+
+// const StyledCard = styled(Card)(({ theme }) => ({
+//     marginBottom: "1rem",
+//     transition: "transform 0.2s",
+//     "&:hover": {
+//         transform: "translateY(-4px)",
+//         boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+//     },
+// }));
+
+// const History = () => {
+//     const navigate = useNavigate();
+//     const [formData, setFormData] = useState({
+//         name: "",
+//         lastName: "",
+//         email: "",
+//         role: "",
+//         customUid: "",
+//     });
+//     const [reports, setReports] = useState([]);
+//     const [loading, setLoading] = useState(true);
+//     const [isDeletingAll, setIsDeletingAll] = useState(false);
+//     const [typeFilter, setTypeFilter] = useState('all');
+//     const [statusFilter, setStatusFilter] = useState('all');
+//     const [fetchError, setFetchError] = useState(null);
+//     const [isPrinting, setIsPrinting] = useState(false);
+//     const [selectedImage, setSelectedImage] = useState(null);
+
+//     const theme = useTheme();
+//     const statusOptions = ['pending', 'in progress', 'denied', 'resolved'];
+
+//     const handleImageClick = (imageUrl) => {
+//         setSelectedImage(imageUrl);
+//     };
+
+//     const handleCloseImageModal = () => {
+//         setSelectedImage(null);
+//     };
+
+//     const handleExportSinglePDF = async (report) => {
+//         setIsPrinting(true);
+//         try {
+//             const blob = await pdf(<PDFReport report={report} />).toBlob();
+//             const url = URL.createObjectURL(blob);
+//             const link = document.createElement('a');
+//             link.href = url;
+//             link.download = `Report-${report.id}.pdf`;
+//             document.body.appendChild(link);
+//             link.click();
+//             document.body.removeChild(link);
+//             URL.revokeObjectURL(url);
+//         } catch (error) {
+//             console.error('Error generating PDF:', error);
+//         } finally {
+//             setIsPrinting(false);
+//         }
+//     };
+
+//     const handleExportAllPDF = async () => {
+//         setIsPrinting(true);
+//         try {
+//             const blob = await pdf(<MultiPDFReport reports={filteredReports} />).toBlob();
+//             const url = URL.createObjectURL(blob);
+//             const link = document.createElement('a');
+//             link.href = url;
+//             link.download = `All-Reports-${Date.now()}.pdf`;
+//             document.body.appendChild(link);
+//             link.click();
+//             document.body.removeChild(link);
+//             URL.revokeObjectURL(url);
+//         } catch (error) {
+//             console.error('Error generating PDF:', error);
+//         } finally {
+//             setIsPrinting(false);
+//         }
+//     };
+
+//     useEffect(() => {
+//         const fetchUserInfo = async () => {
+//             try {
+//                 const { data: { user }, error } = await supabase.auth.getUser();
+//                 if (error || !user) {
+//                     setFetchError(error?.message || "No authenticated user");
+//                     setLoading(false);
+//                     return;
+//                 }
+
+//                 const { data: userDetails } = await supabase
+//                     .from('users')
+//                     .select('fname, lname, role, id')
+//                     .eq('id', user.id)
+//                     .single();
+
+//                 setFormData({
+//                     name: `${userDetails.fname} ${userDetails.lname}`,
+//                     lastName: userDetails.lname,
+//                     email: user.email,
+//                     role: userDetails.role,
+//                     customUid: userDetails.id,
+//                 });
+//             } catch (error) {
+//                 setFetchError(error.message);
+//                 setLoading(false);
+//             }
+//         };
+//         fetchUserInfo();
+//     }, []);
+
+//     useEffect(() => {
+//         if (formData.customUid) {
+//             if (formData.role === 'it admin') setTypeFilter('IT Maintenance');
+//             fetchReports();
+//         }
+//     }, [formData.customUid, formData.role]);
+
+//     const fetchReports = async () => {
+//         try {
+//             setLoading(true);
+//             let query = supabase
+//                 .from('reports')
+//                 .select('*')
+//                 .order('created_at', { ascending: false });
+
+//             if (formData.role === 'it admin') {
+//                 query = query.eq('type', 'IT Maintenance');
+//             } else if (formData.role !== 'admin') {
+//                 query = query.eq('user_uid', formData.customUid);
+//             }
+
+//             const { data: reportsData } = await query;
+//             const sortedReports = formData.role === 'admin' 
+//                 ? [...(reportsData || [])].sort((a, b) => 
+//                     (REPORT_PRIORITY[a.type]?.order || 99) - (REPORT_PRIORITY[b.type]?.order || 99)
+//                   )
+//                 : reportsData || [];
+
+//             setReports(sortedReports);
+//         } catch (error) {
+//             setFetchError(error.message);
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
+
+//     const handleDeleteReport = async (reportId) => {
+//         try {
+//             const { error } = await supabase
+//                 .from('reports')
+//                 .delete()
+//                 .eq('id', reportId);
+
+//             if (!error) {
+//                 setReports(reports.filter(report => report.id !== reportId));
+//             }
+//         } catch (error) {
+//             console.error('Error deleting report:', error);
+//         }
+//     };
+
+//     const handleDeleteAllReports = async () => {
+//         setIsDeletingAll(true);
+//         try {
+//             const { error } = await supabase
+//                 .from('reports')
+//                 .delete()
+//                 .neq('id', 0);
+
+//             if (!error) {
+//                 setReports([]);
+//             }
+//         } catch (error) {
+//             console.error('Error deleting all reports:', error);
+//         } finally {
+//             setIsDeletingAll(false);
+//         }
+//     };
+
+//     const getStatusColor = (status) => {
+//         switch (status.toLowerCase()) {
+//             case "resolved": return "success";
+//             case "pending": return "warning";
+//             case "in progress": return "info";
+//             case "denied": return "error";
+//             default: return "default";
+//         }
+//     };
+
+//     const filteredReports = reports.filter(report => {
+//         if (formData.role === 'it admin') {
+//             return statusFilter === 'all' || report.status.toLowerCase() === statusFilter.toLowerCase();
+//         }
+//         return (typeFilter === 'all' || report.type === typeFilter) &&
+//                (statusFilter === 'all' || report.status.toLowerCase() === statusFilter.toLowerCase());
+//     });
+
+//     if (loading) {
+//         return (
+//             <Container maxWidth="lg" sx={{ py: 4 }}>
+//                 <Navbar userDetails={formData} />
+//                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+//                     <CircularProgress size="4rem" />
+//                 </Box>
+//             </Container>
+//         );
+//     }
+
+//     return (
+//         <Container maxWidth="lg" sx={{ py: 4 }}>
+//             <Navbar userDetails={formData} />
+            
+//             <Modal
+//                 open={Boolean(selectedImage)}
+//                 onClose={handleCloseImageModal}
+//                 aria-labelledby="image-preview-modal"
+//                 aria-describedby="full-size-image-preview"
+//             >
+//                 <Box sx={{
+//                     position: 'absolute',
+//                     top: '50%',
+//                     left: '50%',
+//                     transform: 'translate(-50%, -50%)',
+//                     bgcolor: 'background.paper',
+//                     boxShadow: 24,
+//                     p: 2,
+//                     outline: 'none',
+//                     maxWidth: '90vw',
+//                     maxHeight: '90vh',
+//                 }}>
+//                     <IconButton
+//                         aria-label="close"
+//                         onClick={handleCloseImageModal}
+//                         sx={{
+//                             position: 'absolute',
+//                             right: 8,
+//                             top: 8,
+//                             color: (theme) => theme.palette.grey[500],
+//                         }}
+//                     >
+//                         <FaTimes />
+//                     </IconButton>
+//                     <img
+//                         src={selectedImage}
+//                         alt="Full size preview"
+//                         style={{
+//                             maxWidth: '100%',
+//                             maxHeight: '80vh',
+//                             display: 'block',
+//                             margin: 'auto',
+//                         }}
+//                     />
+//                 </Box>
+//             </Modal>
+
+//             <Box sx={{ 
+//                 display: 'flex', 
+//                 flexDirection: { xs: 'column', md: 'row' }, 
+//                 justifyContent: 'space-between', 
+//                 alignItems: 'center', 
+//                 mb: 3, 
+//                 gap: 2 
+//             }}>
+//                 <Typography variant="h4" component="h1">
+//                     {formData.role === 'it admin' ? 'IT Maintenance Reports' : 'Report History'}
+//                 </Typography>
+                
+//                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+//                     {formData.role !== 'it admin' && (
+//                         <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+//                             <InputLabel>Filter by Type</InputLabel>
+//                             <Select
+//                                 value={typeFilter}
+//                                 onChange={(e) => setTypeFilter(e.target.value)}
+//                                 label="Filter by Type"
+//                             >
+//                                 <MenuItem value="all">All Types</MenuItem>
+//                                 {reportTypes.map((type) => (
+//                                     <MenuItem key={type} value={type}>{type}</MenuItem>
+//                                 ))}
+//                             </Select>
+//                         </FormControl>
+//                     )}
+
+//                     <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+//                         <InputLabel>Filter by Status</InputLabel>
+//                         <Select
+//                             value={statusFilter}
+//                             onChange={(e) => setStatusFilter(e.target.value)}
+//                             label="Filter by Status"
+//                         >
+//                             <MenuItem value="all">All Statuses</MenuItem>
+//                             {statusOptions.map((status) => (
+//                                 <MenuItem key={status} value={status}>
+//                                     {status.charAt(0).toUpperCase() + status.slice(1)}
+//                                 </MenuItem>
+//                             ))}
+//                         </Select>
+//                     </FormControl>
+
+//                     <Button
+//                         variant="contained"
+//                         color="primary"
+//                         onClick={handleExportAllPDF}
+//                         disabled={filteredReports.length === 0 || isPrinting}
+//                         startIcon={<FaPrint />}
+//                     >
+//                         {isPrinting ? 'Generating...' : 'Export All as PDF'}
+//                     </Button>
+
+//                     <Button
+//                         variant="contained"
+//                         color="error"
+//                         startIcon={isDeletingAll ? <CircularProgress size={20} /> : <FaRadiation />}
+//                         onClick={handleDeleteAllReports}
+//                         disabled={isDeletingAll || reports.length === 0}
+//                     >
+//                         {isDeletingAll ? 'Deleting...' : 'Delete All'}
+//                     </Button>
+//                 </Box>
+//             </Box>
+
+//             {filteredReports.length === 0 ? (
+//                 <Typography variant="body1" color="textSecondary" sx={{ mt: 4 }}>
+//                     {formData.role === 'it admin' ? 'No IT Maintenance reports' : 'No reports available'}
+//                 </Typography>
+//             ) : (
+//                 <Grid container spacing={3}>
+//                     {filteredReports.map((report) => (
+//                         <Grid item xs={12} key={report.id}>
+//                             <StyledCard>
+//                                 <CardContent>
+//                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                                         <Typography variant="h6" component="div">
+//                                             {report.title}
+//                                         </Typography>
+//                                         <Box sx={{ display: 'flex', gap: 1 }}>
+//                                             <Chip 
+//                                                 label={report.type}
+//                                                 color={REPORT_PRIORITY[report.type]?.color || 'default'}
+//                                                 size="small"
+//                                             />
+//                                             <Chip 
+//                                                 label={report.status}
+//                                                 color={getStatusColor(report.status)}
+//                                                 size="small"
+//                                             />
+//                                         </Box>
+//                                     </Box>
+//                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+//                                         {report.details}
+//                                     </Typography>
+//                                     {report.image && (
+//                                         <CardMedia
+//                                             component="img"
+//                                             height="140"
+//                                             image={report.image}
+//                                             alt="Report image"
+//                                             sx={{ 
+//                                                 mt: 2, 
+//                                                 borderRadius: 1,
+//                                                 cursor: 'pointer',
+//                                                 transition: 'transform 0.3s ease',
+//                                                 '&:hover': {
+//                                                     transform: 'scale(1.03)',
+//                                                 }
+//                                             }}
+//                                             onClick={() => handleImageClick(report.image)}
+//                                         />
+//                                     )}
+//                                     <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                                         <Typography variant="caption" color="text.secondary">
+//                                             Reported by {report.name} • {new Date(report.created_at).toLocaleDateString()}
+//                                         </Typography>
+//                                         <Box sx={{ display: 'flex', gap: 1 }}>
+//                                             <Button
+//                                                 startIcon={<FaPrint />}
+//                                                 onClick={(e) => {
+//                                                     e.stopPropagation();
+//                                                     handleExportSinglePDF(report);
+//                                                 }}
+//                                                 disabled={isPrinting}
+//                                             >
+//                                                 Export PDF
+//                                             </Button>
+//                                             <Button
+//                                                 startIcon={<FaTrash />}
+//                                                 onClick={(e) => {
+//                                                     e.stopPropagation();
+//                                                     handleDeleteReport(report.id);
+//                                                 }}
+//                                                 color="error"
+//                                             >
+//                                                 Delete
+//                                             </Button>
+//                                         </Box>
+//                                     </Box>
+//                                 </CardContent>
+//                             </StyledCard>
+//                         </Grid>
+//                     ))}
+//                 </Grid>
+//             )}
+//         </Container>
+//     );
+// };
+
+// export default History;
+
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -1803,9 +2251,12 @@ import {
     MenuItem,
     InputLabel,
     FormControl,
+    Modal,
+    IconButton,
+    useMediaQuery
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { FaTrash, FaRadiation, FaPrint } from "react-icons/fa";
+import { FaTrash, FaRadiation, FaPrint, FaTimes } from "react-icons/fa";
 import { useTheme } from '@mui/material/styles';
 import Navbar from '../components/Navbar';
 import supabase from "../helper/supabaseClient";
@@ -1844,7 +2295,6 @@ const History = () => {
         role: "",
         customUid: "",
     });
-
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -1852,18 +2302,86 @@ const History = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [fetchError, setFetchError] = useState(null);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
     const statusOptions = ['pending', 'in progress', 'denied', 'resolved'];
+
+    const handleImageClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+    };
+
+    const handleCloseImageModal = () => {
+        setSelectedImage(null);
+    };
+
+    // const handleExportSinglePDF = async (report) => {
+    //     setIsPrinting(true);
+    //     try {
+    //         const blob = await pdf(<PDFReport report={report} />).toBlob();
+    //         const url = URL.createObjectURL(blob);
+    //         const link = document.createElement('a');
+    //         link.href = url;
+    //         link.download = `Report-${report.id}.pdf`;
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         document.body.removeChild(link);
+    //         URL.revokeObjectURL(url);
+    //     } catch (error) {
+    //         console.error('Error generating PDF:', error);
+    //     } finally {
+    //         setIsPrinting(false);
+    //     }
+    // };
+
+    // const handleExportAllPDF = async () => {
+    //     setIsPrinting(true);
+    //     try {
+    //         const blob = await pdf(<MultiPDFReport reports={filteredReports} />).toBlob();
+    //         const url = URL.createObjectURL(blob);
+    //         const link = document.createElement('a');
+    //         link.href = url;
+    //         link.download = `All-Reports-${Date.now()}.pdf`;
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         document.body.removeChild(link);
+    //         URL.revoObjectURL(url);
+    //     } catch (error) {
+    //         console.error('Error generating PDF:', error);
+    //     } finally {
+    //         setIsPrinting(false);
+    //     }
+    // };
 
     const handleExportSinglePDF = async (report) => {
         setIsPrinting(true);
         try {
-            const blob = await pdf(<PDFReport report={report} />).toBlob();
+            if (!report) {
+                console.error('Error: Report is undefined');
+                return;
+            }
+            
+            // Create a safe report object with fallback values for any potentially missing properties
+            const safeReport = {
+                ...report,
+                title: report.title || 'No Title',
+                details: report.details || 'No Details',
+                type: report.type || 'Unknown Type',
+                status: report.status || 'Unknown Status',
+                specific_place: report.specific_place || 'Not Specified',
+                name: report.name || 'Unknown Reporter',
+                created_at: report.created_at || new Date().toISOString(),
+                // Don't include image if it's not available or is an empty string
+                image: report.image && report.image.trim() ? report.image : null
+            };
+            
+            const blob = await pdf(<PDFReport report={safeReport} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Report-${report.id}.pdf`;
+            link.download = `Report-${report.id || 'unknown'}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1874,11 +2392,30 @@ const History = () => {
             setIsPrinting(false);
         }
     };
-
+    
     const handleExportAllPDF = async () => {
         setIsPrinting(true);
         try {
-            const blob = await pdf(<MultiPDFReport reports={filteredReports} />).toBlob();
+            if (!filteredReports || filteredReports.length === 0) {
+                console.error('No reports to export');
+                return;
+            }
+            
+            // Create safe report objects for each report
+            const safeReports = filteredReports.map(report => ({
+                ...report,
+                title: report.title || 'No Title',
+                details: report.details || 'No Details',
+                type: report.type || 'Unknown Type',
+                status: report.status || 'Unknown Status',
+                specific_place: report.specific_place || 'Not Specified',
+                name: report.name || 'Unknown Reporter',
+                created_at: report.created_at || new Date().toISOString(),
+                // Don't include image if it's not available or is an empty string
+                image: report.image && report.image.trim() ? report.image : null
+            }));
+            
+            const blob = await pdf(<MultiPDFReport reports={safeReports} />).toBlob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -1894,7 +2431,6 @@ const History = () => {
         }
     };
 
-    // User and report fetching logic
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
@@ -2025,30 +2561,84 @@ const History = () => {
     }
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
             <Navbar userDetails={formData} />
             
-            {/* Header and Filter Section */}
+            <Modal
+                open={Boolean(selectedImage)}
+                onClose={handleCloseImageModal}
+                aria-labelledby="image-preview-modal"
+                aria-describedby="full-size-image-preview"
+            >
+                <Box sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    boxShadow: 24,
+                    p: 2,
+                    outline: 'none',
+                    maxWidth: '90vw',
+                    maxHeight: '90vh',
+                }}>
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleCloseImageModal}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: (theme) => theme.palette.grey[500],
+                            zIndex: 1,
+                        }}
+                    >
+                        <FaTimes />
+                    </IconButton>
+                    <img
+                        src={selectedImage}
+                        alt="Full size preview"
+                        style={{
+                            maxWidth: '100%',
+                            maxHeight: '80vh',
+                            display: 'block',
+                            margin: 'auto',
+                        }}
+                    />
+                </Box>
+            </Modal>
+
             <Box sx={{ 
                 display: 'flex', 
                 flexDirection: { xs: 'column', md: 'row' }, 
                 justifyContent: 'space-between', 
-                alignItems: 'center', 
+                alignItems: { xs: 'flex-start', md: 'center' }, 
                 mb: 3, 
                 gap: 2 
             }}>
-                <Typography variant="h4" component="h1">
+                <Typography variant="h4" component="h1" sx={{ 
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+                }}>
                     {formData.role === 'it admin' ? 'IT Maintenance Reports' : 'Report History'}
                 </Typography>
                 
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' }, 
+                    gap: 2, 
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    width: { xs: '100%', sm: 'auto' }
+                }}>
                     {formData.role !== 'it admin' && (
-                        <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+                        <FormControl variant="outlined" size="small" sx={{ 
+                            minWidth: { xs: '100%', sm: 180 } 
+                        }}>
                             <InputLabel>Filter by Type</InputLabel>
                             <Select
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
                                 label="Filter by Type"
+                                fullWidth
                             >
                                 <MenuItem value="all">All Types</MenuItem>
                                 {reportTypes.map((type) => (
@@ -2058,12 +2648,15 @@ const History = () => {
                         </FormControl>
                     )}
 
-                    <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+                    <FormControl variant="outlined" size="small" sx={{ 
+                        minWidth: { xs: '100%', sm: 180 } 
+                    }}>
                         <InputLabel>Filter by Status</InputLabel>
                         <Select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             label="Filter by Status"
+                            fullWidth
                         >
                             <MenuItem value="all">All Statuses</MenuItem>
                             {statusOptions.map((status) => (
@@ -2074,44 +2667,67 @@ const History = () => {
                         </Select>
                     </FormControl>
 
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleExportAllPDF}
-                        disabled={filteredReports.length === 0 || isPrinting}
-                        startIcon={<FaPrint />}
-                    >
-                        {isPrinting ? 'Generating...' : 'Export All as PDF'}
-                    </Button>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        gap: 2,
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        width: { xs: '100%', sm: 'auto' }
+                    }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleExportAllPDF}
+                            disabled={filteredReports.length === 0 || isPrinting}
+                            startIcon={<FaPrint />}
+                            fullWidth={isMobile}
+                            size={isMobile ? "medium" : "medium"}
+                        >
+                            {isPrinting ? 'Generating...' : isMobile ? 'Export All' : 'Export All as PDF'}
+                        </Button>
 
-                    <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={isDeletingAll ? <CircularProgress size={20} /> : <FaRadiation />}
-                        onClick={handleDeleteAllReports}
-                        disabled={isDeletingAll || reports.length === 0}
-                    >
-                        {isDeletingAll ? 'Deleting...' : 'Delete All'}
-                    </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={isDeletingAll ? <CircularProgress size={20} /> : <FaRadiation />}
+                            onClick={handleDeleteAllReports}
+                            disabled={isDeletingAll || reports.length === 0}
+                            fullWidth={isMobile}
+                            size={isMobile ? "medium" : "medium"}
+                        >
+                            {isDeletingAll ? 'Deleting...' : 'Delete All'}
+                        </Button>
+                    </Box>
                 </Box>
             </Box>
 
-            {/* Reports List */}
             {filteredReports.length === 0 ? (
                 <Typography variant="body1" color="textSecondary" sx={{ mt: 4 }}>
                     {formData.role === 'it admin' ? 'No IT Maintenance reports' : 'No reports available'}
                 </Typography>
             ) : (
-                <Grid container spacing={3}>
+                <Grid container spacing={2}>
                     {filteredReports.map((report) => (
                         <Grid item xs={12} key={report.id}>
                             <StyledCard>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Typography variant="h6" component="div">
+                                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        justifyContent: 'space-between', 
+                                        alignItems: { xs: 'flex-start', sm: 'center' },
+                                        gap: { xs: 1, sm: 0 }
+                                    }}>
+                                        <Typography variant="h6" component="div" sx={{
+                                            fontSize: { xs: '1rem', sm: '1.25rem' }
+                                        }}>
                                             {report.title}
                                         </Typography>
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            gap: 1,
+                                            flexWrap: 'wrap',
+                                            mt: { xs: 1, sm: 0 }
+                                        }}>
                                             <Chip 
                                                 label={report.type}
                                                 color={REPORT_PRIORITY[report.type]?.color || 'default'}
@@ -2133,14 +2749,35 @@ const History = () => {
                                             height="140"
                                             image={report.image}
                                             alt="Report image"
-                                            sx={{ mt: 2, borderRadius: 1 }}
+                                            sx={{ 
+                                                mt: 2, 
+                                                borderRadius: 1,
+                                                cursor: 'pointer',
+                                                transition: 'transform 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'scale(1.03)',
+                                                }
+                                            }}
+                                            onClick={() => handleImageClick(report.image)}
                                         />
                                     )}
-                                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ 
+                                        mt: 2, 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        justifyContent: 'space-between', 
+                                        alignItems: { xs: 'flex-start', sm: 'center' },
+                                        gap: { xs: 2, sm: 0 }
+                                    }}>
                                         <Typography variant="caption" color="text.secondary">
                                             Reported by {report.name} • {new Date(report.created_at).toLocaleDateString()}
                                         </Typography>
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            gap: 1,
+                                            flexDirection: { xs: 'column', sm: 'row' },
+                                            width: { xs: '100%', sm: 'auto' }
+                                        }}>
                                             <Button
                                                 startIcon={<FaPrint />}
                                                 onClick={(e) => {
@@ -2148,8 +2785,11 @@ const History = () => {
                                                     handleExportSinglePDF(report);
                                                 }}
                                                 disabled={isPrinting}
+                                                fullWidth={isMobile}
+                                                size={isMobile ? "small" : "medium"}
+                                                variant={isMobile ? "outlined" : "text"}
                                             >
-                                                Export PDF
+                                                {isMobile ? 'Export' : 'Export PDF'}
                                             </Button>
                                             <Button
                                                 startIcon={<FaTrash />}
@@ -2158,6 +2798,9 @@ const History = () => {
                                                     handleDeleteReport(report.id);
                                                 }}
                                                 color="error"
+                                                fullWidth={isMobile}
+                                                size={isMobile ? "small" : "medium"}
+                                                variant={isMobile ? "outlined" : "text"}
                                             >
                                                 Delete
                                             </Button>
